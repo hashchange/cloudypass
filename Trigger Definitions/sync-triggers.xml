@@ -3,7 +3,7 @@
     <Triggers>
         <Trigger>
             <Guid>ep38X3gnhUav8V/tLMTZvw==</Guid>
-            <Name>Import on Open</Name>
+            <Name>Cloudypass: Import on Open</Name>
             <Comments>Imports changes from a cloud drive.
 
 When the local DB is opened, the cloud copy is examined for changes which have been made on another machine. If present, they are imported into the local DB.</Comments>
@@ -88,7 +88,7 @@ When the local DB is opened, the cloud copy is examined for changes which have b
         </Trigger>
         <Trigger>
             <Guid>/43/eUNJXUKFtWBJOB2WVw==</Guid>
-            <Name>Sync on Save</Name>
+            <Name>Cloudypass: Sync on Save</Name>
             <Comments>Syncs changes to a cloud drive.
 
 After the user has made changes to the local DB and has saved them, the local DB is synced to the cloud copy.</Comments>
@@ -166,7 +166,7 @@ After the user has made changes to the local DB and has saved them, the local DB
         </Trigger>
         <Trigger>
             <Guid>l8FbsNj8GU2N8eS9hAEiHQ==</Guid>
-            <Name>Monitor Sync Errors</Name>
+            <Name>Cloudypass: Monitor Sync Errors</Name>
             <Comments>Detects errors which have occurred during cloud sync operations. Alerts the user if any are found.</Comments>
             <Events>
                 <Event>
