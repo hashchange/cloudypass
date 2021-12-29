@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# Checks if the log for new errors exists and is not empty. Sets exit code 0 (truthy) if that is the
+# case, or if an error occurred during execution (!). Sets exit code 1 (falsy) if the log is empty
+# or nonexistent. Does not create output.
+
+set -u
+
+# Absolute path to the script.
+progdir="$([[ "$BASH_SOURCE" == /* ]] && dirname "$BASH_SOURCE" || { _dir="$( realpath -e "$BASH_SOURCE")"; [[ "$_dir" == /* ]] && dirname "$_dir" || pwd; })"
+
+export PATH="$progdir:$PATH"
+
+NEW_ERRORS_LOG="$(get-error-log --new-errors)" || exit 0    # Runtime error converted to exit status 0!
+
+[ -s "$NEW_ERRORS_LOG" ]

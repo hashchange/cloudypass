@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -u
+
+PROGNAME="$(basename "$BASH_SOURCE")"
+progdir="$([[ "$BASH_SOURCE" == /* ]] && dirname "$BASH_SOURCE" || { _dir="$( realpath -e "$BASH_SOURCE")"; [[ "$_dir" == /* ]] && dirname "$_dir" || pwd; })"
+
+export PATH="$progdir:$PATH"
+
+LOG="$progdir/ERROR_LOG_TEST.log"
+
+exec 2> >(tee -a "$LOG" >&2)
+
+_error-log-test-sub2
+# Race #2:
+# Error message of sub2 (called above) vs error message of sub1 (echo'ed below).
+#
+# The error message below may appear BEFORE the error message of sub2. It's asynchronous and a race.
+# To ensure proper order, reflecting the order of calls, some amount of time needs to pass,
+# otherwise the order of log entries is completely random.
+#
+# In order to illustrate the race condition and show the reverse ordering, the `tee` command is
+# artificially delayed by 0.1s in sub2. (Otherwise, in WSL, the race is tight and results vary.)
+echo "This is an error message from $PROGNAME" >&2
+

@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TriggerCollection xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <Triggers>
+        <Trigger>
+            <Guid>ep38X3gnhUav8V/tLMTZvw==</Guid>
+            <Name>Import on Open</Name>
+            <Comments>Imports changes from a cloud drive.
+
+When the local DB is opened, the cloud copy is examined for changes which have been made on another machine. If present, they are imported into the local DB.</Comments>
+            <Events>
+                <Event>
+                    <TypeGuid>5f8TBoW4QYm5BvaeKztApw==</TypeGuid>
+                    <Parameters>
+                        <Parameter>0</Parameter>
+                        <Parameter />
+                    </Parameters>
+                </Event>
+            </Events>
+            <Conditions>
+                <Condition>
+                    <TypeGuid>uQ/4B3M4T+q7LrwL6juYww==</TypeGuid>
+                    <Parameters>
+                        <Parameter>{CMD:/wsl "$(wslpath "{DB_DIR}\.admin\.scripts\has-cloud-copy-changed.sh")" "{DB_NAME}" &amp;&amp; echo true || echo false/M=C,WS=H/}</Parameter>
+                        <Parameter>0</Parameter>
+                        <Parameter>true</Parameter>
+                    </Parameters>
+                    <Negate>false</Negate>
+                </Condition>
+            </Conditions>
+            <Actions>
+                <Action>
+                    <TypeGuid>tkamn96US7mbrjykfswQ6g==</TypeGuid>
+                    <Parameters>
+                        <Parameter />
+                        <Parameter>0</Parameter>
+                    </Parameters>
+                </Action>
+                <Action>
+                    <TypeGuid>tkamn96US7mbrjykfswQ6g==</TypeGuid>
+                    <Parameters>
+                        <Parameter>Sync on Save</Parameter>
+                        <Parameter>0</Parameter>
+                    </Parameters>
+                </Action>
+                <Action>
+                    <TypeGuid>2uX4OwcwTBOe7y66y27kxw==</TypeGuid>
+                    <Parameters>
+                        <Parameter>wsl</Parameter>
+                        <Parameter>"$(wslpath "{DB_DIR}\.admin\.scripts\sync-incoming-changes--pre-sync.sh")" "{DB_NAME}"</Parameter>
+                        <Parameter>True</Parameter>
+                        <Parameter>1</Parameter>
+                        <Parameter />
+                    </Parameters>
+                </Action>
+                <Action>
+                    <TypeGuid>Iq135Bd4Tu2ZtFcdArOtTQ==</TypeGuid>
+                    <Parameters>
+                        <Parameter>{CMD:/wsl "$(wslpath "{DB_DIR}\.admin\.scripts\get-import-dir.sh")"/M=C,WS=H/}\{DB_NAME}</Parameter>
+                        <Parameter />
+                        <Parameter />
+                    </Parameters>
+                </Action>
+                <Action>
+                    <TypeGuid>2uX4OwcwTBOe7y66y27kxw==</TypeGuid>
+                    <Parameters>
+                        <Parameter>wsl</Parameter>
+                        <Parameter>"$(wslpath "{DB_DIR}\.admin\.scripts\sync-incoming-changes--post-sync.sh")" "{DB_NAME}"</Parameter>
+                        <Parameter>True</Parameter>
+                        <Parameter>1</Parameter>
+                        <Parameter />
+                    </Parameters>
+                </Action>
+                <Action>
+                    <TypeGuid>tkamn96US7mbrjykfswQ6g==</TypeGuid>
+                    <Parameters>
+                        <Parameter>Sync on Save</Parameter>
+                        <Parameter>1</Parameter>
+                    </Parameters>
+                </Action>
+                <Action>
+                    <TypeGuid>tkamn96US7mbrjykfswQ6g==</TypeGuid>
+                    <Parameters>
+                        <Parameter />
+                        <Parameter>1</Parameter>
+                    </Parameters>
+                </Action>
+            </Actions>
+        </Trigger>
+        <Trigger>
+            <Guid>/43/eUNJXUKFtWBJOB2WVw==</Guid>
+            <Name>Sync on Save</Name>
+            <Comments>Syncs changes to a cloud drive.
+
+After the user has made changes to the local DB and has saved them, the local DB is synced to the cloud copy.</Comments>
+            <Events>
+                <Event>
+                    <TypeGuid>s6j9/ngTSmqcXdW6hDqbjg==</TypeGuid>
+                    <Parameters>
+                        <Parameter>0</Parameter>
+                        <Parameter />
+                    </Parameters>
+                </Event>
+            </Events>
+            <Conditions>
+                <Condition>
+                    <TypeGuid>y0qeNFaMTJWtZ00coQQZvA==</TypeGuid>
+                    <Parameters>
+                        <Parameter>{DB_DIR}\.admin\.scripts\is-included-db.sh</Parameter>
+                    </Parameters>
+                    <Negate>false</Negate>
+                </Condition>
+                <Condition>
+                    <TypeGuid>uQ/4B3M4T+q7LrwL6juYww==</TypeGuid>
+                    <Parameters>
+                        <Parameter>{CMD:/wsl "$(wslpath "{DB_DIR}\.admin\.scripts\is-included-db.sh")" "{DB_NAME}" &amp;&amp; echo true || echo false/M=C,WS=H/}</Parameter>
+                        <Parameter>0</Parameter>
+                        <Parameter>true</Parameter>
+                    </Parameters>
+                    <Negate>false</Negate>
+                </Condition>
+            </Conditions>
+            <Actions>
+                <Action>
+                    <TypeGuid>tkamn96US7mbrjykfswQ6g==</TypeGuid>
+                    <Parameters>
+                        <Parameter />
+                        <Parameter>0</Parameter>
+                    </Parameters>
+                </Action>
+                <Action>
+                    <TypeGuid>2uX4OwcwTBOe7y66y27kxw==</TypeGuid>
+                    <Parameters>
+                        <Parameter>wsl</Parameter>
+                        <Parameter>"$(wslpath "{DB_DIR}\.admin\.scripts\sync-outgoing-changes--pre-sync.sh")" "{DB_NAME}"</Parameter>
+                        <Parameter>True</Parameter>
+                        <Parameter>1</Parameter>
+                        <Parameter />
+                    </Parameters>
+                </Action>
+                <Action>
+                    <TypeGuid>Iq135Bd4Tu2ZtFcdArOtTQ==</TypeGuid>
+                    <Parameters>
+                        <Parameter>{CMD:/wsl "$(wslpath "{DB_DIR}\.admin\.scripts\get-cloud-sync-dir.sh")"/M=C,WS=H/}\{DB_NAME}</Parameter>
+                        <Parameter />
+                        <Parameter />
+                    </Parameters>
+                </Action>
+                <Action>
+                    <TypeGuid>2uX4OwcwTBOe7y66y27kxw==</TypeGuid>
+                    <Parameters>
+                        <Parameter>wsl</Parameter>
+                        <Parameter>"$(wslpath "{DB_DIR}\.admin\.scripts\sync-outgoing-changes--post-sync.sh")" "{DB_NAME}"</Parameter>
+                        <Parameter>True</Parameter>
+                        <Parameter>1</Parameter>
+                        <Parameter />
+                    </Parameters>
+                </Action>
+                <Action>
+                    <TypeGuid>tkamn96US7mbrjykfswQ6g==</TypeGuid>
+                    <Parameters>
+                        <Parameter />
+                        <Parameter>1</Parameter>
+                    </Parameters>
+                </Action>
+            </Actions>
+        </Trigger>
+        <Trigger>
+            <Guid>l8FbsNj8GU2N8eS9hAEiHQ==</Guid>
+            <Name>Monitor Sync Errors</Name>
+            <Comments>Detects errors which have occurred during cloud sync operations. Alerts the user if any are found.</Comments>
+            <Events>
+                <Event>
+                    <TypeGuid>s6j9/ngTSmqcXdW6hDqbjg==</TypeGuid>
+                    <Parameters>
+                        <Parameter>0</Parameter>
+                        <Parameter />
+                    </Parameters>
+                </Event>
+            </Events>
+            <Conditions>
+                <Condition>
+                    <TypeGuid>y0qeNFaMTJWtZ00coQQZvA==</TypeGuid>
+                    <Parameters>
+                        <Parameter>{DB_DIR}\.admin\.scripts\has-new-errors.sh</Parameter>
+                    </Parameters>
+                    <Negate>false</Negate>
+                </Condition>
+                <Condition>
+                    <TypeGuid>uQ/4B3M4T+q7LrwL6juYww==</TypeGuid>
+                    <Parameters>
+                        <Parameter>{CMD:/wsl "$(wslpath "{DB_DIR}\.admin\.scripts\has-new-errors.sh")" &amp;&amp; echo true || echo false/M=C,WS=H/}</Parameter>
+                        <Parameter>0</Parameter>
+                        <Parameter>true</Parameter>
+                    </Parameters>
+                    <Negate>false</Negate>
+                </Condition>
+            </Conditions>
+            <Actions>
+                <Action>
+                    <TypeGuid>tkamn96US7mbrjykfswQ6g==</TypeGuid>
+                    <Parameters>
+                        <Parameter />
+                        <Parameter>0</Parameter>
+                    </Parameters>
+                </Action>
+                <Action>
+                    <TypeGuid>CfePcyTsT+yItiXVMPQ0bg==</TypeGuid>
+                    <Parameters>
+                        <Parameter>Database Sync Error</Parameter>
+                        <Parameter>{CMD:/wsl "$(wslpath "{DB_DIR}\.admin\.scripts\process-new-errors.sh")"/M=C,WS=H/}</Parameter>
+                        <Parameter>16</Parameter>
+                        <Parameter>4</Parameter>
+                        <Parameter>0</Parameter>
+                        <Parameter>0</Parameter>
+                        <Parameter>2</Parameter>
+                        <Parameter>{CMD:/%comspec% /c notepad.exe "{DB_DIR}\.admin\Config\sync.defaults.conf" &amp; notepad.exe "{DB_DIR}\.admin\Config\sync.conf"/M=C,WS=H,W=0/}</Parameter>
+                    </Parameters>
+                </Action>
+                <Action>
+                    <TypeGuid>tkamn96US7mbrjykfswQ6g==</TypeGuid>
+                    <Parameters>
+                        <Parameter />
+                        <Parameter>1</Parameter>
+                    </Parameters>
+                </Action>
+            </Actions>
+        </Trigger>
+    </Triggers>
+</TriggerCollection>

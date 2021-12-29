@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+# Expects a Keepass database name as argument (filename with extension) and checks if it can be
+# processed, or if it is listed among the files which are to be excluded from processing.
+#
+# Signals that it is okay to proceed with exit code 0. Sets exit code 1 for excluded files. Does not
+# create output.
+#
+# Sets exit code 0 (processing okay) only if the check finished without error. In case of any error,
+# exit code 1 or higher (exclude from processing) is returned.
+#
+# The list of excluded files is defined in the config files.
+
+set -eu
+
+# Script name
+PROGNAME="$(basename "$BASH_SOURCE")"
+
+# Absolute path to the script.
+progdir="$([[ "$BASH_SOURCE" == /* ]] && dirname "$BASH_SOURCE" || { _dir="$( realpath -e "$BASH_SOURCE")"; [[ "$_dir" == /* ]] && dirname "$_dir" || pwd; })"
+
+export PATH="$progdir:$PATH"
+
+# Functions
+fatal_error() { echo -e "$PROGNAME: $1" >&2; exit 1; }
+
+# Arguments
+(( $# != 1 )) && fatal_error "Incorrect number of arguments. $PROGNAME expects one argument, but $# were provided."
+db_name="$1"
+
+# Read the configuration
+EXCLUDE_FROM_SYNC="$(get-config-setting EXCLUDE_FROM_SYNC)" || fatal_error "The list of Keepass database files which are excluded from syncing could not be retrieved from the configuration.\n    The list has to be defined by the EXCLUDE_FROM_SYNC variable in the user or default configuration file.\n    The list can be empty (as an empty array), but the variable must exist."
+
+! (grep -Fxq "$db_name" <<<"$EXCLUDE_FROM_SYNC")

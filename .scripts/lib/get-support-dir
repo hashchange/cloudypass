@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+
+# Returns the absolute path of the requested sync support directory, in Linux format (by default).
+# Expects the type of support directory as argument.
+#
+# Creates the directory if necessary. Throws an error if it can't be created or is not accessible.
+#
+# Valid directory type arguments:
+#
+# - last-synced
+# - last-known-good
+# - temp-import
+#
+# Options:
+#
+# -w, --windows-format:    returns the path in Windows format (Linux-specific path: as UNC path)
+
+set -eu
+
+# Script name
+PROGNAME="$(basename "$BASH_SOURCE")"
+
+# Absolute path to the script.
+progdir="$([[ "$BASH_SOURCE" == /* ]] && dirname "$BASH_SOURCE" || { _dir="$( realpath -e "$BASH_SOURCE")"; [[ "$_dir" == /* ]] && dirname "$_dir" || pwd; })"
+
+export PATH="$progdir:$PATH"
+
+# Functions
+fatal_error() { echo -e "$PROGNAME: $1" >&2; exit 1; }
+
+# Preconfigured paths
+admin_dir="$(realpath $progdir/../..)"
+
+# Arguments
+(( $# == 0 )) && fatal_error "The directory type argument is missing."
+(( $# > 2 )) && fatal_error "Incorrect number of arguments. $PROGNAME expects up to two arguments, but $# were provided."
+
+windows_format=false
+if [[ "$1" == "-w" || "$1" == "--windows-format" ]]; then
+    windows_format=true
+    shift 1
+    (( $# == 0 )) && fatal_error "The directory type argument is missing."
+fi
+
+case "$1" in
+    last-synced)
+        support_dir="$admin_dir/.sync/last-synced"
+        ;;
+    last-known-good)
+        support_dir="$admin_dir/.sync/last-known-good"
+        ;;
+    temp-import)
+        support_dir="$admin_dir/.sync/temp-import"
+        ;;
+    *)
+        fatal_error "Unknown directory type argument '$1'"
+        ;;
+esac
+
+# Make sure the support directory exists, create it if missing
+[ ! -d "$support_dir" ] && { mkdir -p "$support_dir" || fatal_error "Failed to create sync support directory at: $(wsl-windows-path -e "$support_dir")"; }
+
+if $windows_format; then
+    wsl-windows-path -f "$support_dir" || fatal_error "Failed to convert the path of the sync support directory '$1' to Windows format.\n    Input path (Linux format): $support_dir"
+else
+    echo "$support_dir"
+fi

@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+
+# Expects the name of a config setting as an argument and returns its value. 
+#
+# Evaluates the user and default config files. Throws an error if the config setting does not exist
+# in any of these files.
+#
+# If the config variable contains an array, the array itself is discarded and its elements are
+# returned as text separated by newlines, ie as a multi-line stream.
+#
+# If the command is called with one of the following options **instead** of a setting name, the
+# full path to a config file is returned:
+#
+# -u, --user-config-path:     returns the full path to the user config file (Linux format)
+# -d, --default-config-path:  returns the full path to the default config file (Linux format)
+
+set -eu
+
+# Script name
+PROGNAME="$(basename "$BASH_SOURCE")"
+
+# Absolute path to the script.
+progdir="$([[ "$BASH_SOURCE" == /* ]] && dirname "$BASH_SOURCE" || { _dir="$( realpath -e "$BASH_SOURCE")"; [[ "$_dir" == /* ]] && dirname "$_dir" || pwd; })"
+
+export PATH="$progdir:$PATH"
+
+# Preconfigured paths
+admin_dir="$(realpath $progdir/../..)"
+
+CONFIG_FILE="$admin_dir/Config/sync.conf"
+CONFIG_DEFAULTS_FILE="$admin_dir/Config/sync.defaults.conf"
+
+# Functions
+fatal_error() { echo -e "$PROGNAME: $1" >&2; exit 1; }
+
+# Arguments
+(( $# != 1 )) && fatal_error "Incorrect number of arguments. $PROGNAME expects one argument, but $# were provided."
+config_varname="$1"
+
+# Handle special options
+if [[ "$config_varname" == "-u" || "$config_varname" == "--user-config-path" ]]; then
+    echo "$CONFIG_FILE"
+elif [[ "$config_varname" == "-d" || "$config_varname" == "--default-config-path" ]]; then
+    echo "$CONFIG_DEFAULTS_FILE"
+else
+    # Read the configuration
+    [ ! -f "$CONFIG_FILE" ] && fatal_error "Cannot find the sync config file. Expected location: $(wsl-windows-path -e "$CONFIG_FILE")"
+    [ ! -f "$CONFIG_DEFAULTS_FILE" ] && fatal_error "Cannot find the file containing the sync config defaults. Expected location: $(wsl-windows-path -e "$CONFIG_DEFAULTS_FILE")"
+
+    # NB Remove any \r chars in linebreaks before sourcing the config. Windows line endings and
+    # Windows tools can create them.
+    . <(tr -d '\r' <"$CONFIG_DEFAULTS_FILE")
+    . <(tr -d '\r' <"$CONFIG_FILE")
+
+    # Check if the variable exists, in a way that also works for variables set to an empty array.
+    # See https://stackoverflow.com/a/35412000/508355
+    declare -p "$config_varname" &>/dev/null || fatal_error "The requested configuration setting '$config_varname' does not exist.\n    Please check your configuration file: $(wsl-windows-path -e "$CONFIG_FILE")\n    If you don't find the setting there, check the configuration defaults at $(wsl-windows-path -e "$CONFIG_DEFAULTS_FILE")"
+
+    # Create a reference (nameref) to the value of config-varname.
+    # NB The requested variable could also be accessed without creating an additional reference,
+    # using shell parameter expansion: ${!config_varname}. But if the variable is an array, that
+    # notation does not support iterating over the array.
+    # See https://unix.stackexchange.com/a/412812/297737
+    declare -n config_var_value="$config_varname"
+
+    # Test if the variable is an array. See https://stackoverflow.com/a/66897754/508355
+    if [[ "${config_var_value@a}" == a ]]; then
+        # Variable is an array.
+        for i in "${config_var_value[@]}"; do echo "$i"; done
+    else
+        echo "$config_var_value"
+    fi
+fi

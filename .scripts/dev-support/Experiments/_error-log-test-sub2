@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -u
+
+PROGNAME="$(basename "$BASH_SOURCE")"
+progdir="$([[ "$BASH_SOURCE" == /* ]] && dirname "$BASH_SOURCE" || { _dir="$( realpath -e "$BASH_SOURCE")"; [[ "$_dir" == /* ]] && dirname "$_dir" || pwd; })"
+
+export PATH="$progdir:$PATH"
+
+LOG="$progdir/ERROR_LOG_TEST.log"
+
+# See sub1 for the rationale behind the `sleep`
+exec 2> >(sleep 0.1; tee -a "$LOG" >&2)
+
+echo "This is an error message from $PROGNAME" >&2

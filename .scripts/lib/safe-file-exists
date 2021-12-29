@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+
+# Tests if a file exists (default), or if a directory exists (with the -d option). Requires an
+# absolute path to the file. Sets exit status 0 (truthy) if the test succeeds, 1 (falsy) if it
+# fails, and 2 in case of an error.
+#
+# ########################################  When to use:  #########################################
+#
+# Use it for CLOUD LOCATIONS only.
+#
+# REQUIRED on virtual drives, e.g. the Boxcryptor drive.
+# NOT REQUIRED, NOT RECOMMENDED on ordinary Windows drives (just use [ -f ... ], [ -d ... ]).
+# NOT REQUIRED on Linux drives.
+#
+# The command works everywhere, but the performance penalty on ordinary Windows drives is
+# significant. On the other hand, the command is essential for virtual drives. Paths in the cloud
+# directory might well be on such a drive (Boxcryptor). Thus, it is best to limit use of the
+# command to cloud directories.
+#
+# #################################################################################################
+#
+# Options:
+#
+# -f, --file       tests if a file exists (default)
+# -d, --directory  tests if a directory exists
+#
+# Features:
+#
+# - Works even on drives which have not been mounted in WSL (e.g. Boxcryptor).
+#
+# (See the developer notes in dev-support for more on that issue.)
+
+set -eu
+
+# Script name
+PROGNAME="$(basename "$BASH_SOURCE")"
+
+# Absolute path to the script.
+progdir="$([[ "$BASH_SOURCE" == /* ]] && dirname "$BASH_SOURCE" || { _dir="$( realpath -e "$BASH_SOURCE")"; [[ "$_dir" == /* ]] && dirname "$_dir" || pwd; })"
+
+export PATH="$progdir:$PATH"
+
+# Functions
+fatal_error() { echo -e "$PROGNAME: $1" >&2; exit 2; }    # Exit status 2!
+
+# Checks if a path is in Windows format. Ie, it begins with [Drive letter]:\
+# or \\[UNC host name].
+is_in_windows_format() { [[ "$1" =~ ^[a-zA-Z]:\\|^\\\\[a-zA-Z] ]]; }
+
+# Checks if a WSL path points to a location in the Windows file system. Ie, it
+# begins with /mnt/[drive letter]. Expects an absolute path. If necessary,
+# resolve it with `realpath -m` first.
+is_in_windows_filesystem() { [[ "$1" =~ ^/mnt/[a-zA-Z]($|/) ]]; }
+
+# Arguments
+(( $# == 0 )) && fatal_error "The file path argument is missing."
+(( $# > 2 )) && fatal_error "Incorrect number of arguments. $PROGNAME expects up to two arguments, but $# were provided."
+
+type="file"
+ps_path_type="Leaf"
+
+if (( $# == 2 )); then
+    case "$1" in
+        -f|--file)
+            shift 1
+            ;;
+        -d|--directory)
+            type="directory"
+            ps_path_type="Container"
+            shift 1
+            ;;
+        *)
+            fatal_error "Unknown option '$1'"
+            ;;
+    esac
+fi
+
+filepath="$1"
+
+# Test
+if is_in_windows_format "$filepath" || is_in_windows_filesystem "$filepath"; then
+    path_win="$(wsl-windows-path -f "$filepath")" || fatal_error "Failed to normalize the $type path to Windows format.\n    ${type@u} path: ${filepath//\\/\\\\}"
+
+    # In a single line, the test looks like this (for a file):
+    #
+    #     [[ "$(Powershell.exe -command "Test-Path -PathType Leaf -LiteralPath '$path_win'" | tr -d '\r')" == "True" ]]
+    #
+    # Below, however, the line is split up, so errors can be captured and logged with an appropriate
+    # message.
+    #
+    # NB Windows newlines (\r\n) in Powershell output must be fixed by removing \r. Otherwise, the
+    # string test (== "True") would fail.
+    ps_result="$(Powershell.exe -command "Test-Path -PathType $ps_path_type -LiteralPath '$path_win'")" || fatal_error "Failed to test if the $type exists (using Powershell Test-Path). Please note that the $type path must be absolute.\n    ${type@u} path: ${filepath//\\/\\\\}"
+    [[ $(tr -d '\r' <<<"$ps_result") == "True" ]] && exit 0 || exit $?
+elif [[ "$type" == "directory" ]]; then
+    [ -d "$filepath" ] && exit 0 || exit $?
+else
+    [ -f "$filepath" ] && exit 0 || exit $?
+fi

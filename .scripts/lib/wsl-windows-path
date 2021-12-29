@@ -1,0 +1,172 @@
+#!/usr/bin/env bash
+
+# Script name
+PROGNAME="$(basename "$BASH_SOURCE")"
+
+if [[ "$1" == '--version' || "$1" == '-v' ]]; then
+    fmt -s <<- VERSION_TEXT
+	$PROGNAME 1.0.0
+	(c) 2021 Michael Heim
+	License: MIT
+	
+	VERSION_TEXT
+    exit 0
+elif [[ "$1" == '--help' || "$1" == '-h' ]]; then
+    fmt -s <<- HELP_TEXT
+	
+	Safely converts a WSL (Linux) path to a Windows path.
+	
+	If a path argument is not provided, input is read from standard input instead (so the command can be used in a pipe).
+	
+	Converts a path if it points to a location in the Windows file system (/mnt/[drive letter]). If the path is WSL-specific, ie within the Linux file system, it is returned unchanged by default. To force conversion to a UNC path (\\\\wsl$\\Ubuntu\\...), use the -f flag.
+	
+	Windows paths (e.g. C:\\Users\\foo) are returned unchanged. However, accidental forward slashes in the path are corrected to backslashes. The -e option (escape backslashes) is honoured as well.
+	
+	The conversion is entirely string-based, the path does not have to exist.
+	
+	During conversion from Linux to Windows format, trailing backslashes are removed. Trailing slashes in unconverted Linux paths are returned as they are passed in, never added or removed.
+	
+	Usage: 
+	$PROGNAME [options] path
+	... | $PROGNAME [options]
+	
+	Options:
+	
+	-e             Escape backslashes.
+	-f             Convert Linux-specific paths to UNC paths.
+	-v, --version  Show version and license.
+	-h, --help     Show help.
+	
+	Conversion examples:
+	
+	    /mnt/d/Foo/Bar Baz/.quux/file.txt => D:\\Foo\\Bar Baz\\.quux\\file.txt
+	    /mnt/d/Foo/Bar Baz/.quux/         => D:\\Foo\\Bar Baz\\.quux
+	    /mnt/d/Foo/Bar Baz/.quux          => D:\\Foo\\Bar Baz\\.quux
+	    /usr/local/bin/                   => /usr/local/bin/
+	    /usr/local/bin/command.sh         => /usr/local/bin/command.sh
+	    ~                                 => /home/[user]  (*)
+	    ./bar (assuming cwd /home/m/foo)  => ./bar
+	    ./bar (assuming cwd /mnt/d/Foo)   => D:\\Foo\\bar
+	
+	    (*) as a result of shell expansion
+	
+	With the -f flag:
+	
+	    ~                            => \\\\wsl$\\Ubuntu\\home\\[user]
+	    /usr/local/bin/              => \\\\wsl$\\Ubuntu\\usr\\local\\bin
+	    /usr/local/bin/command.sh    => \\\\wsl$\\Ubuntu\\usr\\local\\bin\\command.sh
+	    
+	    ./bar (assuming cwd /home/m/foo)  => \\\\wsl$\\Ubuntu\\home\\m\\foo\\bar
+	    ./bar (assuming cwd /mnt/d/Foo)   => D:\\Foo\\bar
+	
+	$PROGNAME differs from the built-in wslpath utility in several respects:
+	
+	- \`wslpath -w\` throws an error if the input path does not exist.
+	- \`wslpath -w\` always converts WSL-specific paths to UNC paths.
+	- \`wslpath -w\` throws an error if the input path is in Windows format.
+	
+	Limitations:
+	
+	Input paths do not have to exist, but they are expected to be valid paths and do not pass an additional sanity check. Invalid paths may lead to unexpected output, rather than an error.
+	
+	HELP_TEXT
+    exit 0
+fi
+
+fatal_error() { echo "$PROGNAME: $1" >&2; exit 1; }
+
+# Checks if a path is in Windows format. Ie, it begins with [Drive letter]:\ 
+# or \\[UNC host name].
+is_in_windows_format() { [[ "$1" =~ ^[a-zA-Z]:\\|^\\\\[a-zA-Z] ]]; }
+
+# Checks if a WSL path points to a location in the Windows file system. Ie, it
+# begins with /mnt/[drive letter]. Expects an absolute path. If necessary, 
+# resolve it with `realpath -m` first.
+is_in_windows_filesystem() { [[ "$1" =~ ^/mnt/[a-zA-Z] ]]; }
+
+# Option default values
+escape_backslash=false
+force_unc=false
+
+while getopts ":ef" option; do
+    case $option in
+        e)
+            escape_backslash=true
+            ;;
+        f)
+            force_unc=true
+            ;;
+        \?)
+            fatal_error "Option '-$OPTARG' is invalid. Script aborted."
+            ;;
+        :)
+            fatal_error "The argument for option '-$OPTARG' is missing. Script aborted."
+            ;;
+    esac
+done
+
+# After removing options from the arguments, get the input path from the
+# remaining argument or, if there is none, from stdin (ie, from a pipe). See
+# - https://stackoverflow.com/a/35512655/508355
+# - https://stackoverflow.com/a/36432966/508355
+# - https://www.gnu.org/software/bash/manual/bash.html#Shell-Parameter-Expansion
+#
+# NB Multi-line input may come from stdin (or a redirected file). Therfore, 
+# multiple paths are handled from here on out, separated by newlines - one path
+# per line.
+shift $(($OPTIND - 1))
+paths="${1:-$(</dev/stdin)}"
+
+# Clean-up: Removing \r characters which may be left over from calls to Windows
+# utilities.
+paths="$(tr -d '\r' <<<"$paths")"
+
+[ -z "$paths" ] && fatal_error "Missing argument. No path provided."
+
+if $force_unc; then
+    unc_prefix="$(
+        set -o pipefail    # See https://stackoverflow.com/a/19804002/508355
+
+        wslpath -w / | tr '\\' '/'
+
+        [ $? -ne 0 ] && exit 1; set +o pipefail
+    )" || fatal_error "Can't determine the UNC path prefix to WSL. \`wslpath\` call failed. Script aborted."
+fi
+
+while IFS= read -r path; do
+
+    if is_in_windows_format "$path"; then
+        # Normalizing accidental forward slashes to backslashes, otherwise 
+        # input is left as-is
+        converted="$(tr '/' '\\' <<<"$path")" || exit $?
+    elif $force_unc; then
+        # - realpath: ensure an absolute path, so we can distinguish between 
+        #   the Windows FS (/mnt/..) and the Linux FS (everything else)
+        # - sed expression #1: if line begins with /mnt/, remove it and convert
+        #   the next letter to upper case, followed by ":" 
+        # - sed expression #2: if line begins with / (still), it's the Unix fs
+        #   root. Replace it with the UNC path prefix (\\wsl$\Ubuntu\)
+        # - tr: replace forward slashes with backslashes
+        converted="$(
+            set -o pipefail    # See https://stackoverflow.com/a/19804002/508355
+
+            realpath -m "$path" | sed -r -e 's_^/mnt/([a-zA-Z])_\U\1:_' -e "s_^/_${unc_prefix}_" | tr '/' '\\'
+
+            [ $? -ne 0 ] && exit 1; set +o pipefail
+        )" || fatal_error "Error while processing the path \"$path\". Script aborted."
+    else
+        abs_path="$(realpath -m "$path")"
+        is_in_windows_filesystem "$abs_path" && convert="$abs_path" || convert="$path"
+        # - sed expression #1: if line begins with /mnt/, convert each "/" to "\" 
+        #   See https://unix.stackexchange.com/a/337255/297737
+        # - sed expression #2: remove \mnt\, convert next letter to upper case, add ":"
+        converted="$(sed -r -e '/^\/mnt\//  y_/_\\_' -e 's_^\\mnt\\([a-zA-Z])_\U\1:_' <<<"$convert")" || exit $?
+    fi
+
+    if $escape_backslash; then
+        sed  's_\\_\\\\_g' <<<"$converted"
+    else 
+        echo "$converted"
+    fi
+
+done <<<"$paths"

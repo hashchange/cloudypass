@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+# Returns the path of the Keepass database directory, where the local Keepass KDBX files are stored.
+# The path is returned in Linux format.
+#
+# The directory is known to exist and is accessible. It is the root directory of the application and
+# contains the .admin directory.
+
+set -eu
+
+# Absolute path to the script.
+progdir="$([[ "$BASH_SOURCE" == /* ]] && dirname "$BASH_SOURCE" || { _dir="$( realpath -e "$BASH_SOURCE")"; [[ "$_dir" == /* ]] && dirname "$_dir" || pwd; })"
+
+realpath "$progdir/../../.."

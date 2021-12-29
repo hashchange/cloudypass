@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+
+# Tests if two files are identical (binary comparison). Requires absolute paths to both files. Sets
+# exit status 0 (truthy) if the files are the same, 1 (falsy) if they are different, and 2 in case
+# of an error.
+#
+# ########################################  When to use:  #########################################
+#
+# Use it for CLOUD LOCATIONS only.
+#
+# REQUIRED on virtual drives, e.g. the Boxcryptor drive.
+# NOT REQUIRED, NOT RECOMMENDED on ordinary Windows drives (just use cmp).
+# NOT REQUIRED on Linux drives.
+#
+# The command works everywhere, but the performance penalty on ordinary Windows drives is
+# significant. On the other hand, the command is essential for virtual drives. Paths in the cloud
+# directory might well be on such a drive (Boxcryptor). Thus, it is best to limit use of the
+# command to cloud directories.
+#
+# #################################################################################################
+#
+# Features:
+#
+# - Works even on drives which have not been mounted in WSL (e.g. Boxcryptor).
+#
+# (See the developer notes in dev-support for more on that issue.)
+
+set -eu
+
+# Script name
+PROGNAME="$(basename "$BASH_SOURCE")"
+
+# Absolute path to the script.
+progdir=$([[ $0 == /* ]] && dirname "$0" || { _dir="$( realpath -e "$0")"; [[ "$_dir" == /* ]] && dirname "$_dir" || pwd; })
+
+export PATH="$progdir:$PATH"
+
+# Functions
+fatal_error() { echo -e "$PROGNAME: $1" >&2; exit 2; }    # Exit status 2!
+
+# Checks if a path is in Windows format. Ie, it begins with [Drive letter]:\
+# or \\[UNC host name].
+is_in_windows_format() { [[ "$1" =~ ^[a-zA-Z]:\\|^\\\\[a-zA-Z] ]]; }
+
+# Checks if a WSL path points to a location in the Windows file system. Ie, it
+# begins with /mnt/[drive letter]. Expects an absolute path. If necessary,
+# resolve it with `realpath -m` first.
+is_in_windows_filesystem() { [[ "$1" =~ ^/mnt/[a-zA-Z]($|/) ]]; }
+
+# Arguments
+(($# != 2)) && fatal_error "$PROGNAME expects two arguments, but $# were provided."
+file_1="$1"
+file_2="$2"
+
+# Safe copy
+if is_in_windows_format "$file_1" || is_in_windows_format "$file_2" || is_in_windows_filesystem "$file_1" || is_in_windows_filesystem "$file_2"; then
+    file_1_win="$(wsl-windows-path -f "$file_1")" || fatal_error "Failed to normalize the file path to Windows format (file #1).\n    File Path: ${file_1//\\/\\\\}"
+    file_2_win="$(wsl-windows-path -f "$file_2")" || fatal_error "Failed to normalize the file path to Windows format (file #2).\n    File Path: ${file_2//\\/\\\\}"
+
+    ps_result="$(Powershell.exe -command "(Get-FileHash -Algorithm MD5 -LiteralPath '$file_1_win').Hash -eq (Get-FileHash -Algorithm MD5 -LiteralPath '$file_2_win').Hash")" || fatal_error "Failed to test if the files are identical (using Powershell Get-FileHash). Please note that the file paths must be absolute.\n    File path #1: ${file_1//\\/\\\\}\n    File path #2: ${file_2//\\/\\\\}"
+    [[ $(tr -d '\r' <<<"$ps_result") == "True" ]] && exit 0 || exit $?
+else
+    cmp -s "$file_1" "$file_2" && exit 0 || { (($? == 1)) && exit 1 || fatal_error "Failed to test if the files are identical (using cmp). Please note that the file paths must be absolute.\n    File path #1: ${file_1//\\/\\\\}\n    File path #2: ${file_2//\\/\\\\}"; }
+fi

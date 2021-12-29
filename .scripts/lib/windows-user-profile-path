@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# Returns the path to the Windows user profile of the current user, in Windows 
+# format (e.g. C:\Users\foo).
+#
+# NB If a WSL path (e.g. /mnt/c/Users/foo) is required, convert the result with
+# `wslpath`.
+wslvar USERPROFILE

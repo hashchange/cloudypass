@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+# Returns the path of the cloud sync directory (aka Dropbox/Boxcryptor/etc directory) in Windows
+# format. Throws an error if the directory does not exist or is not accessible.
+
+set -eu
+
+# Script name
+PROGNAME="$(basename "$BASH_SOURCE")"
+
+# Absolute path to the script.
+progdir="$([[ "$BASH_SOURCE" == /* ]] && dirname "$BASH_SOURCE" || { _dir="$( realpath -e "$BASH_SOURCE")"; [[ "$_dir" == /* ]] && dirname "$_dir" || pwd; })"
+
+export PATH="$progdir:$PATH"
+
+# Functions
+fatal_error() { echo -e "$PROGNAME: $1" >&2; exit 1; }
+
+# Read the configuration
+CLOUD_SYNC_DIR="$(get-config-setting CLOUD_SYNC_DIR)" || fatal_error "The cloud sync directory could not be retrieved from the configuration. Its location has to be defined by the CLOUD_SYNC_DIR variable in the user or default configuration file."
+
+# Verify that the directory exists and return it
+safe-file-exists -d "$CLOUD_SYNC_DIR" || fatal_error "The cloud sync directory does not exist or is not accessible.\n    The path to the directory is defined as $CLOUD_SYNC_DIR\n    Please check your configuration file: $(wsl-windows-path -e "$(get-config-setting --user-config-path)")\n    If you don't find the setting there, check the configuration defaults at $(wsl-windows-path -e "$(get-config-setting --default-config-path)")"
+echo "$CLOUD_SYNC_DIR"

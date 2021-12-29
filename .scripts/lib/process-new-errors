@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+# Returns the content of the log for new errors, embedded in an explanatory message, and deletes the
+# content (but not the file).
+#
+# If the log for new errors does not exist or is empty, a corresponding message is displayed
+# instead.
+
+set -eu
+
+# Absolute path to the script.
+progdir="$([[ "$BASH_SOURCE" == /* ]] && dirname "$BASH_SOURCE" || { _dir="$( realpath -e "$BASH_SOURCE")"; [[ "$_dir" == /* ]] && dirname "$_dir" || pwd; })"
+
+export PATH="$progdir:$PATH"
+
+NEW_ERRORS_LOG="$(get-error-log --new-errors)" || exit $?
+
+# Allow a bit of extra time for other processes to finish logging
+sleep 0.1
+
+error_message_postfix="\n\nPlease examine the log files in the following directory:\n'$(dirname "$NEW_ERRORS_LOG")'"
+
+if [ -s "$NEW_ERRORS_LOG" ]; then
+    logged="$(<"$NEW_ERRORS_LOG")" || "Something went wrong here. Additional errors have occurred while reading the error log file.$error_message_postfix"
+    : > "$NEW_ERRORS_LOG"
+else
+    logged="Something went wrong here. No new errors have been found in the log file.$error_message_postfix"
+fi
+
+cat <<MESSAGE_TEXT
+New errors have been recorded:
+
+$logged
+
+Please check your configuration file for possible mistakes. Do you want to open it now (and the default configuration file as well, for reference)?
+MESSAGE_TEXT

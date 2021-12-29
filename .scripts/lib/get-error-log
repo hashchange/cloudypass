@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+
+# Returns the absolute path to the error log. Creates the log as well as its parent directories if 
+# necessary.
+#
+# Throws an error if the log (or its parent directories) can't be created.
+#
+# Returns the path to another log, the log for new errors, when called with the -n flag (see
+# below). Creates that log file and its parent directories if necessary.
+#
+# If the log for new errors is not empty, it indicates that new errors have occurred. The log
+# contains a duplicate of the log output for these errors. Its content must be deleted once the
+# errors have been displayed to the user or processed otherwise. (The file itself can also be
+# deleted. It will be recreated the next time this command is called.) By contrast, the ordinary
+# error log stays around as a permanent record.
+#
+# Option:
+#
+# -n, --new-errors:  returns the path to the log for new errors
+
+set -u
+
+# Script name
+PROGNAME="$(basename "$BASH_SOURCE")"
+
+# Absolute path to the script.
+progdir="$([[ "$BASH_SOURCE" == /* ]] && dirname "$BASH_SOURCE" || { _dir="$( realpath -e "$BASH_SOURCE")"; [[ "$_dir" == /* ]] && dirname "$_dir" || pwd; })"
+
+export PATH="$progdir:$PATH"
+
+# Preconfigured paths
+admin_dir="$(realpath $progdir/../..)"
+
+LOG_DIR="$admin_dir/Logs"
+ERROR_LOG="$LOG_DIR/sync.error.log"
+NEW_ERRORS_LOG="$LOG_DIR/new.sync.errors.log"
+
+# Functions
+fatal_error() { echo -e "$PROGNAME: $1" >&2; exit 1; }
+
+# Set up error reporting
+if [ ! -d "$LOG_DIR" ]; then
+    mkdir -p "$LOG_DIR" || fatal_error "Failed to create the log directory at: $(wsl-windows-path -e "$LOG_DIR")"
+fi
+
+touch "$ERROR_LOG" || fatal_error "Failed to create or access the error log file at: $(wsl-windows-path -e "$ERROR_LOG")"
+touch "$NEW_ERRORS_LOG" || fatal_error "Failed to create or access the log file for new errors at: $(wsl-windows-path -e "$NEW_ERRORS_LOG")"
+
+# Arguments
+(( $# > 1 )) && fatal_error "Incorrect number of arguments. $PROGNAME expects one argument at most, but $# were provided."
+
+# Output
+if (( $# == 0 )); then
+    echo "$ERROR_LOG"
+elif [[ "$1" == "-n" || "$1" == "--new-errors" ]]; then
+    echo "$NEW_ERRORS_LOG"
+else
+    fatal_error "Unknown argument or option '$1'"
+fi

@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+# Reads error messages **from stdin**, writes (appends) them to the permanent error log and to the
+# log for new errors, and sends the error messages to stderr.
+#
+# As a result, it is easier to set up error handling in top-level scripts. This line is sufficient:
+#
+#     exec 2> >(log-errors)
+#
+# It replaces the following incantation:
+#
+#     ERROR_LOG="$(get-error-log)" || exit $?
+#     NEW_ERRORS_LOG="$(get-error-log --new-errors)" || exit $?
+#     exec 2> >(tee -a "$ERROR_LOG" "$NEW_ERRORS_LOG" >&2)
+#
+# which is no longer necessary now.
+#
+# IMPORTANT! Avoiding duplicate log entries:
+#
+# The redirection to the logs (`exec 2> >(log-errors)`) **must only happen in the top-level script**,
+# not in any utility scripts which are invoked by it. Utility scripts must write their errors to
+# stderr only, just as any other command line program does it.
+#
+# If utility scripts contained the `exec` redirection command as well, the entries would double,
+# triple or multiply even more, depending on the depth of the call stack at the time of the error.
+# Also, entries might not appear in the right order. See the developer notes for details.
+#
+# A note on the logs:
+#
+# ERROR_LOG is the permanent error log. NEW_ERRORS_LOG is a log for new errors.
+#
+# If the log for new errors is not empty, it indicates that new, unprocessed errors have occurred.
+# The NEW_ERRORS_LOG contains a duplicate of the log records in ERROR_LOG for these new errors. The
+# NEW_ERRORS_LOG file must be emptied or deleted once the errors have been displayed to the user or
+# processed in another way. By contrast, the ERROR_LOG stays around as a permanent record.
+
+set -u
+
+# Absolute path to the script.
+progdir="$([[ "$BASH_SOURCE" == /* ]] && dirname "$BASH_SOURCE" || { _dir="$( realpath -e "$BASH_SOURCE")"; [[ "$_dir" == /* ]] && dirname "$_dir" || pwd; })"
+
+export PATH="$progdir:$PATH"
+
+ERROR_LOG="$(get-error-log)" || exit $?
+NEW_ERRORS_LOG="$(get-error-log --new-errors)" || exit $?
+
+# Processing stdin
+timestamp="$(date +"%F %T.%2N")"
+sed "s/^/$timestamp: /" | tee -a "$ERROR_LOG" "$NEW_ERRORS_LOG" | sed "s/^$timestamp: //" >&2

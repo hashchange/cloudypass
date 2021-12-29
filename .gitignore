@@ -1,0 +1,23 @@
+# Specific exclusions
+Backup/
+Logs/
+Sync/
+.sync/
+/.scripts/dev-support/Experiments/ERROR_LOG_TEST.log
+/.scripts/dev-support/Experiments/test_data.dat
+
+# Jetbrains
+.idea/
+
+# Generic exclusions
+tmp/
+*.orig
+.DS_Store
+Thumbs.db
+
+# Local
+_ dev/
+_ originals/
+todo.md
+_ignore-tmp/
+.scripts - old/

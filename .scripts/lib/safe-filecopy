@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+# Copies a file, preserving the timestamp. Requires absolute paths to the source and the target.
+#
+# ########################################  When to use:  #########################################
+#
+# Use it for EVERY COPY OPERATION.
+#
+# REQUIRED on virtual drives, e.g. the Boxcryptor drive.
+# REQUIRED on ordinary Windows drives.
+#
+# Not required on Linux drives (`cp` could be used instead), but the performance penalty is
+# negligible. Thus, it is best to use the safe, universal command everywhere.
+#
+# #################################################################################################
+#
+# Features:
+#
+# - Copying works even on drives which have not been mounted in WSL (e.g. Boxcryptor).
+# - The copy is guaranteed to have an identical timestamp, even considering the quirks of Windows
+#   drives in WSL.
+#
+# (See the developer notes in dev-support for these issues.)
+
+set -eu
+
+# Script name
+PROGNAME="$(basename "$BASH_SOURCE")"
+
+# Absolute path to the script.
+progdir="$([[ "$BASH_SOURCE" == /* ]] && dirname "$BASH_SOURCE" || { _dir="$( realpath -e "$BASH_SOURCE")"; [[ "$_dir" == /* ]] && dirname "$_dir" || pwd; })"
+
+export PATH="$progdir:$PATH"
+
+# Functions
+fatal_error() { echo -e "$PROGNAME: $1" >&2; exit 1; }
+
+# Checks if a path is in Windows format. Ie, it begins with [Drive letter]:\
+# or \\[UNC host name].
+is_in_windows_format() { [[ "$1" =~ ^[a-zA-Z]:\\|^\\\\[a-zA-Z] ]]; }
+
+# Checks if a WSL path points to a location in the Windows file system. Ie, it
+# begins with /mnt/[drive letter]. Expects an absolute path. If necessary,
+# resolve it with `realpath -m` first.
+is_in_windows_filesystem() { [[ "$1" =~ ^/mnt/[a-zA-Z]($|/) ]]; }
+
+# Arguments
+(( $# != 2 )) && fatal_error "$PROGNAME expects two arguments, but $# were provided."
+source="$1"
+target="$2"
+
+# Safe copy
+if is_in_windows_format "$source" || is_in_windows_format "$target" || is_in_windows_filesystem "$source" || is_in_windows_filesystem "$target"; then
+    source_win="$(wsl-windows-path -f "$source")" || fatal_error "Failed to normalize the source path to Windows format.\n    Source: ${source//\\/\\\\}"
+    target_win="$(wsl-windows-path -f "$target")" || fatal_error "Failed to normalize the target path to Windows format.\n    Target: ${target//\\/\\\\}"
+
+    Powershell.exe -command "Copy-Item -LiteralPath '$source_win' -Destination '$target_win'" || fatal_error "Failed to copy file (using Powershell Copy-Item). Please note that file paths must be absolute.\n    Copy source: ${source//\\/\\\\}\n    Copy target: ${target//\\/\\\\}"
+else
+    cp --preserve=timestamps "$source" "$target" || fatal_error "Failed to copy file (using Linux cp). Please note that file paths must be absolute.\n    Copy source: ${source//\\/\\\\}\n    Copy target: ${target//\\/\\\\}"
+fi
+
