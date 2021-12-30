@@ -13,6 +13,7 @@
    - Calculating a file hash if the drive is not mounted in WSL
    - Reading the Last Modified timestamp of a file if the drive is not mounted in WSL
    - Converting a Windows path to Linux format even if the drive is not mounted in WSL
+   - Testing if Powershell scripts can execute
 
 
 ## Missing drives in WSL (e.g. Boxcryptor)
@@ -316,3 +317,25 @@ to_linux_path() {
 Notes: 
 - `\L` in sed replacement: text is converted to lower case from here on out
 - `\E` in sed replacement: ends `\L` conversion
+
+
+**Testing if Powershell scripts can execute**
+
+Powershell commands can always be executed directly, but for executing scripts, the appropriate policy must be set on the machine. Execution of unsigned scripts is not permitted by default. The function checks it and is to be used in `if` statements etc.
+
+Usage: 
+
+    can-execute-powershell-scripts || fatal_error "Execution of Powershell scripts is not permitted"
+    if can-execute-powershell-scripts; then ...
+
+Argument: None.
+
+```bash
+can-execute-powershell-scripts() { [[ $(Powershell.exe -command '$policy = Get-ExecutionPolicy; Write-Host (($policy -eq "Restricted") -or ($policy -eq "AllSigned"))' | tr -d '\r') == False ]]; }
+```
+
+Notes: 
+- For more on Powershell execution policies, see [Managing the execution policy with PowerShell](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-7.2) in the Microsoft Docs.
+- `tr -d '\r'`: see `get_hash` notes, above.
+
+

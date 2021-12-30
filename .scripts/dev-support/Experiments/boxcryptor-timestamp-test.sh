@@ -2,10 +2,18 @@
 
 set -eu
 
+# Script name
+PROGNAME="$(basename "$BASH_SOURCE")"
+
 # Absolute path to the script.
-progdir=$([[ $0 == /* ]] && dirname "$0" || { _dir="$( realpath -e "$0")"; [[ "$_dir" == /* ]] && dirname "$_dir" || pwd; })
+progdir="$([[ "$BASH_SOURCE" == /* ]] && dirname "$BASH_SOURCE" || { _dir="$( realpath -e "$BASH_SOURCE")"; [[ "$_dir" == /* ]] && dirname "$_dir" || pwd; })"
 
 export PATH="$(realpath "$progdir/../../lib"):$PATH"
+
+fatal_error() {
+    echo -e "$PROGNAME: $1" >&2;
+    exit 1;
+}
 
 is_wsl() {
     [ -n "${WSL_DISTRO_NAME}" ]
@@ -48,6 +56,10 @@ get_ps_lib_path_win() {
     echo "$(wslpath -aw "$progdir")\\boxcryptor-timestamp-test-lib.ps1"
 }
 
+can-execute-powershell-scripts() {
+    [[ $(Powershell.exe -command '$policy = Get-ExecutionPolicy; Write-Host (($policy -eq "Restricted") -or ($policy -eq "AllSigned"))' | tr -d '\r') == False ]]
+}
+
 create_test_fixture() {
     Powershell.exe -command ". '$(get_ps_lib_path_win)'; echo (Create-TestFixture '"$1"' '"$2"')" | tr -d '\r';
 }
@@ -85,6 +97,9 @@ create_local_test_file() {
 }
 
 test_run() {
+    # Check if .ps1 files are allowed to execute
+    can-execute-powershell-scripts || fatal_error "Powershell script execution is not permitted. Enable it in order to run this test.\n\nScript execution can be allowed for the current user with the following command:\n\n    Set-ExecutionPolicy -Scope CurrentUser RemoteSigned\n"
+
     local encrypted_parent_dir='J:\Dropbox\Encryption Tests\Encrypted dir with name encryption'
 
     local test_dir_name="timestamp_test_$(date +%s%N)"
