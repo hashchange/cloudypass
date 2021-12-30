@@ -98,7 +98,7 @@ When the local DB is opened, the cloud copy is examined for changes which have b
                 <Action>
                     <TypeGuid>tkamn96US7mbrjykfswQ6g==</TypeGuid>
                     <Parameters>
-                        <Parameter>Sync on Save</Parameter>
+                        <Parameter>Cloudypass: Sync on Save</Parameter>
                         <Parameter>0</Parameter>
                     </Parameters>
                 </Action>
@@ -133,7 +133,7 @@ When the local DB is opened, the cloud copy is examined for changes which have b
                 <Action>
                     <TypeGuid>tkamn96US7mbrjykfswQ6g==</TypeGuid>
                     <Parameters>
-                        <Parameter>Sync on Save</Parameter>
+                        <Parameter>Cloudypass: Sync on Save</Parameter>
                         <Parameter>1</Parameter>
                     </Parameters>
                 </Action>
