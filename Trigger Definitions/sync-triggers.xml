@@ -2,6 +2,66 @@
 <TriggerCollection xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <Triggers>
         <Trigger>
+            <Guid>6h0SAOjV6kmyiSK5RSYGVw==</Guid>
+            <Name>Cloudypass: Warn if WSL bash is not available</Name>
+            <Comments>Tests if WSL is available and a functioning Linux distro is installed. The cloud sync scripts rely on it.
+
+Disables cloud sync until the problem is fixed. Once the test passes, cloud sync is re-enabled automatically.</Comments>
+            <Events>
+                <Event>
+                    <TypeGuid>1M7NtUuYT/KmqeJVJh7I6A==</TypeGuid>
+                    <Parameters />
+                </Event>
+            </Events>
+            <Conditions>
+                <Condition>
+                    <TypeGuid>uQ/4B3M4T+q7LrwL6juYww==</TypeGuid>
+                    <Parameters>
+                        <Parameter>{CMD:/Powershell.exe -Command "wsl which bash &gt;$null 2&gt;&amp;1; Write-Host $? -nonewline"/M=C,WS=H/}</Parameter>
+                        <Parameter>0</Parameter>
+                        <Parameter>True</Parameter>
+                    </Parameters>
+                    <Negate>true</Negate>
+                </Condition>
+            </Conditions>
+            <Actions>
+                <Action>
+                    <TypeGuid>CfePcyTsT+yItiXVMPQ0bg==</TypeGuid>
+                    <Parameters>
+                        <Parameter>Cloud Sync is disabled: WSL Linux is not available</Parameter>
+                        <Parameter>The Windows Subsystem for Linux (WSL) is not set up with a functioning Linux distribution. Cloud sync with Cloudypass won't work and is disabled.</Parameter>
+                        <Parameter>48</Parameter>
+                        <Parameter>0</Parameter>
+                        <Parameter>0</Parameter>
+                        <Parameter>0</Parameter>
+                        <Parameter>0</Parameter>
+                        <Parameter />
+                    </Parameters>
+                </Action>
+                <Action>
+                    <TypeGuid>tkamn96US7mbrjykfswQ6g==</TypeGuid>
+                    <Parameters>
+                        <Parameter>Cloudypass: Import on Open</Parameter>
+                        <Parameter>0</Parameter>
+                    </Parameters>
+                </Action>
+                <Action>
+                    <TypeGuid>tkamn96US7mbrjykfswQ6g==</TypeGuid>
+                    <Parameters>
+                        <Parameter>Cloudypass: Sync on Save</Parameter>
+                        <Parameter>0</Parameter>
+                    </Parameters>
+                </Action>
+                <Action>
+                    <TypeGuid>tkamn96US7mbrjykfswQ6g==</TypeGuid>
+                    <Parameters>
+                        <Parameter>Cloudypass: Monitor Sync Errors</Parameter>
+                        <Parameter>0</Parameter>
+                    </Parameters>
+                </Action>
+            </Actions>
+        </Trigger>
+        <Trigger>
             <Guid>ep38X3gnhUav8V/tLMTZvw==</Guid>
             <Name>Cloudypass: Import on Open</Name>
             <Comments>Imports changes from a cloud drive.
