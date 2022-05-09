@@ -6,7 +6,7 @@ PROGNAME="$(basename "$BASH_SOURCE")"
 if [[ "$1" == '--version' || "$1" == '-v' ]]; then
     fmt -s <<- VERSION_TEXT
 	$PROGNAME 1.0.0
-	(c) 2021 Michael Heim
+	(c) 2022 Michael Heim
 	License: MIT
 	
 	VERSION_TEXT
@@ -111,7 +111,7 @@ done
 # - https://stackoverflow.com/a/36432966/508355
 # - https://www.gnu.org/software/bash/manual/bash.html#Shell-Parameter-Expansion
 #
-# NB Multi-line input may come from stdin (or a redirected file). Therfore, 
+# NB Multi-line input may come from stdin (or a redirected file). Therefore,
 # multiple paths are handled from here on out, separated by newlines - one path
 # per line.
 shift $(($OPTIND - 1))
