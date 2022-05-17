@@ -1,4 +1,5 @@
 # Specific exclusions
+/Config/sync.conf
 Backup/
 Logs/
 Sync/
