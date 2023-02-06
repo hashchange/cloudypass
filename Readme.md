@@ -100,6 +100,18 @@ If you are fine with that, here's what you need to do.
 
 ## What do I do if ... ?
 
+### Edits in a local database don't show up elsewhere
+
+Perhaps you encounter this issue very early on. You might notice it immediately after setup if your databases on different machines are not in sync to begin with.
+
+**Edits in a local database are pushed to the cloud and to other computers when you save the database.** They don't make it to the cloud just because the local database is somehow different from the others. You need to hit that save button.
+
+During normal operation, pushing data when saving is exactly what should happen. But if your databases are not in sync to begin with, you need to make at least one edit in each database to bring them into the same state in every location. That will most likely happen over time, but you can bring it forward and complete the initial synchronization with a pseudo edit in each database (like adding and deleting a space, which enables you to save the database and force the data push).
+
+Likewise, an additional save can help you if your latest edits in the local database have failed to make it to the cloud, for whatever reason. Your machine might have crashed the very moment you saved the database. Or perhaps an encryption layer like Boxcryptor has frozen and blocked the transfer. No matter what caused it: Once the problem is sorted out, just save the local database again, and your edits will be passed on to your other devices.
+
+NB You don't need to worry about any of this in order to _receive_ edits which have been made elsewhere. They get pulled into the local database as soon as you open it. (And every time you save it, too.) There is no need to help the import along, ever.
+
 ### Sync conflict on mobile
 
 Assume you are editing an entry in the Keepass database on your phone. Unfortunately, due to a failed sync (perhaps because of a weak signal), the file you are editing is an old one, rather than the latest version of the database. While you have been typing, the signal has come back. You are online again and hit save. 
@@ -108,11 +120,11 @@ What should you do if your mobile application, such as Keepassium, reports a con
 
 The answer is straightforward but perhaps a little counter-intuitive: When asked, do _not_ create a separate copy, i.e. a renamed version of the database file. Instead, choose "overwrite", which replaces the version of the database in the cloud with the one you just edited on your mobile.
 
-But what about the lost entries in the overwritten file? Well, they have vanished from the cloud copy, but not from the universe. They still exist in the local database on your computer. The next time you open it, the content of the local database is merged with the copy in the cloud. 
+But what about the lost entries in the overwritten file? Well, they have vanished from the cloud copy, but not from the universe. They still exist in the local database on your computer. The next time you open it, the content of the cloud copy is imported into the local database. And the next time you edit and save it, the content of the local database is merged back into the copy in the cloud. 
 
-[That merge process is a two-way street](https://keepass.info/help/v2/sync.html). The edits from your phone are imported into the local database on your desktop. Likewise, the entries from your desktop are merged into the cloud copy. The latter part is restoring the "lost" edits to the cloud copy. Everything you had overwritten previously, when you hit "save" on your mobile, is resurrected now.
+The latter part is restoring the "lost" edits to the cloud copy. Everything you had overwritten previously, back then when you hit "save" on your mobile, is resurrected now. But please be aware that may be a delay: [Only after the local database is edited and saved](#edits-in-a-local-database-dont-show-up-elsewhere), the "lost" edits will show up everywhere else again.
 
-Long story short: **Just overwrite conflicting files.** Your data is safe, and all will be well.
+Details aside, the key takeaway is this: **Just overwrite conflicting files.** Your data is safe, and all will be well.
 
 ### Synchronization troubles: Can data ever be lost?
 
@@ -136,7 +148,7 @@ The solution is simple: Provided that your local copy is intact, just copy it to
 
 ### File corruption of your local database
 
-I have never observed this, but then again, never is a rather long time.
+I have never observed this, but then again, never is a long time.
 
 If the database in the cloud directory is still okay, you can use it to replace your local database, of course. But in case it is messed up as well, you still have another option: the backup which Cloudypass creates as part of its normal operation. 
 
