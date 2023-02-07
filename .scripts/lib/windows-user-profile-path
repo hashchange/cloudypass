@@ -1,8 +1,56 @@
 #!/usr/bin/env bash
 
-# Returns the path to the Windows user profile of the current user, in Windows 
+# Returns the path to the Windows user profile of the current user, in Windows
 # format (e.g. C:\Users\foo).
 #
 # NB If a WSL path (e.g. /mnt/c/Users/foo) is required, convert the result with
 # `wslpath`.
-wslvar USERPROFILE
+
+# NB Previously, `wslvar` has been used for this task. That has been much
+# cleaner than the current implementation. The script consisted of a single
+# call: `wslvar USERPROFILE`.
+#
+# However, the `wslvar` call has been **much** slower than the current
+# implementation. Calling the script led to a visible delay.
+#
+# In addition, `wslvar` is no longer bundled with Ubuntu on WSL. It is part of
+# the `wslu` package (WSL Utilities) which has been removed in Ubuntu 22.04 LTS.
+#
+# See
+# - https://github.com/wslutilities/wslu
+# - https://wslutiliti.es/wslu/install.html
+# - https://superuser.com/a/1568668/315475
+
+# The Windows environment variable %UserProfile% is queried with cmd.exe. The
+# parts of the solution are:
+#
+# - `set /p variable=[promptString]` displays a prompt string, then sets a
+#    variable from user input. Unlike `echo`, the prompt string is printed
+#    without a trailing CrLf (which is what we are aiming for here).
+#
+# - `set /p=[promptString]` omits the variable. According to ss64.com, "the
+#    variable name can also be left empty but this is undocumented".
+#
+# - `<nul` fakes the user input. "Feed a NUL character into SET /P like this,
+#    so it doesn’t wait for any user input." (ss64.com).
+#
+# - `2>/dev/null` suppresses any error messages cmd.exe might generate.
+#
+# - The entire command line must be wrapped in quotes in order to be treated as
+#   a single argument, containing the entire set of instructions, which is then
+#   processed by cmd.exe.
+#
+# - The single escaped quote before `=%UserProfile%`, in `set /p\"=%UserProfile%`,
+#   ensures that cmd.exe doesn't choke on problematic characters, e.g. an " & "
+#   in the username or elsewhere in the path. Odd as it may be, a closing
+#   escaped quote `\"` behind %UserProfile%, added for symmetry, would in fact
+#   be appended the return value (including the escaping backslash). Unescaped,
+#   the closing quote would even cause an error. So a single escaped quote
+#   character it is.
+#
+# See
+# - https://ss64.com/nt/set.html
+# - https://stackoverflow.com/a/44980824/508355
+
+USERPROFILE_PATH="$(cmd.exe /c "<nul set /p\"=%UserProfile%" 2>/dev/null)"
+echo "$USERPROFILE_PATH"

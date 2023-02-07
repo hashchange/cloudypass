@@ -104,6 +104,7 @@ test_run() {
 
 test_run ~
 
-if is_wsl; then 
-    test_run  "$(wslpath "$(wslvar USERPROFILE)")"
+if is_wsl; then
+    USERPROFILE_PATH="$(cmd.exe /c "<nul set /p\"=%UserProfile%" 2>/dev/null)"
+    test_run  "$(wslpath "$USERPROFILE_PATH")"
 fi
