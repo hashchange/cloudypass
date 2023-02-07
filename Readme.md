@@ -190,6 +190,7 @@ Should Keepass ever be ported to macOS, this will be an asset, as Linux Bash scr
 
 ### v.1.1.1
 
+- Added support for WSL distro Ubuntu 22.04 LTS
 - Excluded user config from being tracked by Git
 - Improved documentation
 
