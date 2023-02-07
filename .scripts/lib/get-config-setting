@@ -64,6 +64,19 @@ else
     declare -n config_var_value="$config_varname"
 
     # Test if the variable is an array. See https://stackoverflow.com/a/66897754/508355
+    #
+    # NB Depending on the Bash version, an empty array makes the test throw the error
+    # "config_var_value: unbound variable" if the script is configured with `set -u` to treat
+    # undefined variables as an error.
+    #
+    # - In Bash 5.1 (Ubuntu 22.04 LTS), the script chokes on the expression `"${config_var_value@a}"`
+    #   even though an empty array shouldn't be treated as unset (and it isn't in other types of
+    #   expressions).
+    # - In Bash 5.0 (Ubuntu 20.04 LTS), by contrast, the expression did not cause an error.
+    #
+    # In order to prevent the error and enable proper handling of empty arrays, the -u option is
+    # turned off with `set +u` before proceeding.
+    set +u
     if [[ "${config_var_value@a}" == a ]]; then
         # Variable is an array.
         for i in "${config_var_value[@]}"; do echo "$i"; done
