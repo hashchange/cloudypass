@@ -5,14 +5,20 @@
 #
 # Throws an error if the log (or its parent directories) can't be created.
 #
-# Returns the path to another log, the log for new errors, when called with the -n flag (see
-# below). Creates that log file and its parent directories if necessary.
+# Returns the path to another, special log, the log for new errors, when called with the -n flag
+# (see below). Creates that log file and its parent directories if necessary.
 #
-# If the log for new errors is not empty, it indicates that new errors have occurred. The log
-# contains a duplicate of the log output for these errors. Its content must be deleted once the
-# errors have been displayed to the user or processed otherwise. (The file itself can also be
-# deleted. It will be recreated the next time this command is called.) By contrast, the ordinary
-# error log stays around as a permanent record.
+# The log for new errors vs the ordinary error log
+# ------------------------------------------------
+#
+# The log for new errors is a separate log file. Any new errors are logged there as well as in the
+# ordinary error log, and are kept there until they have been displayed to the user (or been
+# processed in another way). Once that has happened, the entries are purged from the log for new
+# errors, but they remain in the ordinary log file as a permanent record.
+#
+# In practical terms: If the log for new errors is not empty, it means that new errors have
+# occurred. After they have been processed, the log can either be emptied or the file can be
+# deleted. It will be recreated the next time this command is called.
 #
 # Option:
 #
