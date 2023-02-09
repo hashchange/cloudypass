@@ -174,12 +174,15 @@ I have tested Cloudypass with these synchronisation services:
 
 - Dropbox
 - Dropbox + Boxcryptor
+- iCloud
+- OneDrive
+- Syncthing
 
 I have tested and used Cloudypass in conjunction with these mobile apps:
 
 - Keepassium on iOS
 
-This is a rather short list. I had plans to do extensive testing with iCloud at the very least, but never got round to it. If you use another sync service and are happy with the results, feel free to let me know, and I will mention it here.
+If you use another sync service and are happy with the results, feel free to let me know, and I will mention it here.
 
 ##### Why WSL?
 
@@ -199,6 +202,8 @@ Should Keepass ever be ported to macOS, however, the WSL/Bash approach will be a
 ### v.1.1.1
 
 - Added support for WSL distro Ubuntu 22.04 LTS
+- Improved check for new errors
+- Fixed optional opening of config files
 - Excluded user config from being tracked by Git
 - Improved documentation
 
