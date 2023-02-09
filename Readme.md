@@ -134,9 +134,9 @@ Assume you are offline for some reason, and you edit the Keepass database on you
 
 The best way to handle this problem is to avoid the situation altogether: Do not edit the database on multiple mobile devices while you are offline.
 
-(Otherwise, to preserve your edits, you would have to save a renamed copy of the file, rather than overwriting the version in the cloud. That course of action contradicts everything you should normally do – [see above](#sync-conflict-on-mobile). When you are back home at your computer, you would also have to merge the renamed database into your local database manually.)
+(Otherwise, to preserve your edits, you would have to save a renamed copy of the file, rather than overwriting the version in the cloud. That course of action contradicts everything you should normally do – [see above](#sync-conflict-on-mobile). When you are back home at your computer, you would also have to [merge](https://keepass.info/help/v2/sync.html) the renamed database into your local database manually.)
 
-That may sound complicated, but the good news is that you are unlikely to run into this issue. When you are offline for an extended period of time, there probably won't be a reason for you to change entries in Keepass.
+That may sound complicated, but the good news is that you are unlikely to run into this issue. When you are offline for an extended period of time, there probably won't be a reason for you to change entries in Keepass. However, if a database is shared between several people and everyone edits it on the go, data loss is much more likely. To avoid it, you have to establish a safe workflow among your group, or use a separate database for each member which is read-only for anyone but the owner.
 
 In any event, you can't mitigate the problem with Cloudypass. The issue occurs when you use mobile devices exclusively. Cloudypass does not run on them.
 
@@ -158,6 +158,12 @@ Inside the directory with your local `.kdbx` file(s), this is where you find the
 
 You can use the file you find there to restore the local database and the cloud copy.
 
+### Something failed without an error message
+
+Unless things have gone wrong on a fairly fundamental level, you will see an error message – either immediately or when you close Keepass. But if that doesn't happen, you can check out the error log. It is located at
+
+    [Local .kdbx database dir]\.admin\Logs\sync.error.log
+
 ## Background
 
 ##### Which setups has Cloudypass been tested with?
@@ -177,13 +183,15 @@ This is a rather short list. I had plans to do extensive testing with iCloud at 
 
 ##### Why WSL?
 
-It might seem that using Bash scripts in WSL is a pretty roundabout way of automating the synchronization, and in fact it is. I simply didn't want to spend the time to get familiar with Powershell for this project. I know my way around Bash scripting, so that's what I used. 
+It might seem that using Bash scripts in WSL is a pretty roundabout way of automating the synchronization, and in fact it is. I simply didn't want to spend the time to get familiar with Powershell for this project. I know my way around Bash scripting, so that's what I used.
 
-Should Keepass ever be ported to macOS, this will be an asset, as Linux Bash scripts usually don't need much adjustment to run on a Mac.
+As it turned out, working with WSL [had its own set of challenges](.scripts/dev-support/Notes/Developer%20Notes.md).
+
+Should Keepass ever be ported to macOS, however, the WSL/Bash approach will be an asset. Linux Bash scripts usually don't need much adjustment to run on a Mac.
 
 ##### Finally, I would like to thank ...
 
-- ... the contributers to the Keepass forum who provided their thoughts [in this discussion](https://sourceforge.net/p/keepass/discussion/329220/thread/a9aab281bd/), years ago. It eventually led to this project.
+- ... the contributors to the Keepass forum who provided their thoughts [in this discussion](https://sourceforge.net/p/keepass/discussion/329220/thread/a9aab281bd/), years ago. It eventually led to this project.
 - ... [the developer behind Keepass](https://keepass.info/contact.html) who put all that work into it, consistently over many years. Thank you.
 
 ## Release Notes
