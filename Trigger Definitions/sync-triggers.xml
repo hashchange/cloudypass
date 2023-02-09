@@ -236,6 +236,13 @@ After the user has made changes to the local DB and has saved them, the local DB
                         <Parameter />
                     </Parameters>
                 </Event>
+                <Event>
+                    <TypeGuid>lPpw5bE/QSamTgZP2MNslQ==</TypeGuid>
+                    <Parameters>
+                        <Parameter>0</Parameter>
+                        <Parameter />
+                    </Parameters>
+                </Event>
             </Events>
             <Conditions>
                 <Condition>
@@ -273,7 +280,7 @@ After the user has made changes to the local DB and has saved them, the local DB
                         <Parameter>0</Parameter>
                         <Parameter>0</Parameter>
                         <Parameter>2</Parameter>
-                        <Parameter>{CMD:/%comspec% /c notepad.exe "{DB_DIR}\.admin\Config\sync.defaults.conf" &amp; notepad.exe "{DB_DIR}\.admin\Config\sync.conf"/M=C,WS=H,W=0/}</Parameter>
+                        <Parameter>{CMD:/Powershell.exe -Command "Start-Process -FilePath 'notepad' -ArgumentList '""{DB_DIR}\.admin\Config\sync.defaults.conf""' -WindowStyle Normal; Start-Process -FilePath 'notepad' -ArgumentList '""{DB_DIR}\.admin\Config\sync.conf""' -WindowStyle Normal"/M=C,WS=H,W=0/}</Parameter>
                     </Parameters>
                 </Action>
                 <Action>
