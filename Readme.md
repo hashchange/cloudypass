@@ -30,7 +30,7 @@ Mobile clients usually check if the Keepass database on the mobile device is up-
 
 ##### Is it safe?
 
-I have written these scripts for my own use. They are tried and tested, in particular with my own setup – Dropbox, Boxcryptor, Keepassium on mobile –, and designed to be reliable. If things go wrong, as they eventually always do, the scripts don't fail silently, but make a fuss. Decent error handling and notifications are an important part of the package.
+I have written these scripts for my own use. They are tried and tested, in particular with my own setup – Dropbox, Boxcryptor, Keepassium on mobile –, and designed to be reliable. If things go wrong, as they eventually always do, the scripts don't fail silently, but make a fuss. Decent error handling and notifications are part of the package.
 
 That said, Cloudypass basically just copies files around and orchestrates the process. The actual synchronization across a network is done by a service of your choice (e.g. Dropbox). Merging data from another machine into the local Keepass database is handled by Keepass itself. The scripts don't touch, know or care about passwords and keyfiles. (Keyfiles should not be synchronized anyway. If you need to move them to a new machine, do it manually.) There is little which could go wrong, security-wise, because the scope of the scripts is so limited.
 
@@ -70,7 +70,10 @@ If you are fine with that, here's what you need to do.
 2. Install Cloudypass.
 
    Install it in the directory where you keep your `.kdbx` Keepass database(s). The directory containing the Cloudypass files must be named `.admin`.
-   + If you are a Git user, just `cd` into the directory with your Keepass databases and run `git clone https://github.com/hashchange/cloudypass.git .admin`.
+   + If you are a Git user, just `cd` into the directory with your Keepass databases and run 
+     
+         git clone https://github.com/hashchange/cloudypass.git .admin
+
    + Otherwise, [download the files manually](https://github.com/hashchange/cloudypass/archive/refs/heads/master.zip) and extract the zip file in the directory with your Keepass databases.
    
    When you are done, this is what your install must look like:
@@ -84,11 +87,13 @@ If you are fine with that, here's what you need to do.
    + [Have a look](https://github.com/hashchange/cloudypass/blob/master/Config/sync.defaults.conf) at the default settings. They are stored in the file `sync.defaults.conf`, along with explanations. But please do not change the settings there.
    + **Rename** the file `sample.sync.conf` to `sync.conf`. Store your own settings in the `sync.conf` file.
    + You will almost certainly need to define the directory which you want to use for the cloud synchronization. If left unconfigured, Cloudypass attempts to use to the directory where Dropbox, in a standard setup, usually keeps your files: `[Your Windows user directory]\Dropbox`.
-4. Create the Keepass triggers.
+4. <a name="create-the-keepass-triggers"></a>Create the Keepass triggers.
    + [Keepass triggers](https://keepass.info/help/v2/triggers.html) are executed by Keepass, e.g. when the application is started, a database is opened or one is saved. Keepass triggers run the appropriate Cloudypass scripts.
-   + Locate the file containing the Cloudypass trigger definitions: `.admin\Trigger Definitions\sync-triggers.xml`. 
+   + Locate the file containing the Cloudypass trigger definitions:<br>
+     `.admin\Trigger Definitions\sync-triggers.xml`
    + Open the file with a text editor and copy its content. 
-   + Open Keepass. Access the trigger settings via the Keepass menu: `Tools` | `Triggers...` 
+   + Open Keepass. Access the trigger settings via the Keepass menu:<br>
+     `Tools` | `Triggers...` 
    + In the trigger settings window, click on the `Tools` button and select `Paste Triggers from Clipboard`.
 5. Make sure the local databases are in place.
    + If the Keepass databases are already in your local Keepass directory, you are done now. The synchronization will start by itself when you open a database. 
@@ -97,6 +102,22 @@ If you are fine with that, here's what you need to do.
      Copy the `.kdbx` databases from the sync directory (the one inside Dropbox or similar) into the local directory (the one where you installed Cloudypass).
    
    In other words: Databases on your local computer will make their way to the synchronization directory by themselves. But not vice versa. Remote databases, which appear in the synchronization directory, need to be copied to the local directory by hand. They are not picked up automatically on a machine which doesn't have them yet.
+
+## How to update
+
+You can update with Git or by downloading and overwriting the local installation.
+
+- If you use Git, `cd` into the `.admin` directory. A plain
+  
+      git pull
+
+  will work and keep your local configuration intact.
+
+  NB It is slightly more elegant to store your setup, including your configuration, in a private branch. You need to remove `Config/sync.conf` from `.gitignore` for that. When you update, just pull and merge the current version of Cloudypass into your private branch.
+
+- Otherwise, [download the lastest version](https://github.com/hashchange/cloudypass/archive/refs/heads/master.zip), extract the zip file and copy its content into the `.admin` directory. Just overwrite everything that is there. Your configuration will remain intact.
+
+You might have to **update the Keepass triggers**, too. Just remove the old ones and [recreate them](#create-the-keepass-triggers) from their new definition. Have a look at the [release notes](#release-notes) to find out if it is necessary.
 
 ## What do I do if ... ?
 
@@ -122,27 +143,31 @@ The answer is straightforward but perhaps a little counter-intuitive: When asked
 
 But what about the lost entries in the overwritten file? Well, they have vanished from the cloud copy, but not from the universe. They still exist in the local database on your computer. The next time you open it, the content of the cloud copy is imported into the local database. And the next time you edit and save it, the content of the local database is merged back into the copy in the cloud. 
 
-The latter part is restoring the "lost" edits to the cloud copy. Everything you had overwritten previously, back then when you hit "save" on your mobile, is resurrected now. But please be aware that may be a delay: [Only after the local database is edited and saved](#edits-in-a-local-database-dont-show-up-elsewhere), the "lost" edits will show up everywhere else again.
+The latter part is restoring the "lost" edits to the cloud copy. Everything you had overwritten previously, back then when you hit "save" on your mobile, is resurrected now. But please be aware that there may be a delay: [Only after the local database is edited and saved](#edits-in-a-local-database-dont-show-up-elsewhere), the "lost" edits will show up everywhere else again.
 
 Details aside, the key takeaway is this: **Just overwrite conflicting files.** Your data is safe, and all will be well.
+
+But there is one exception. For that scenario, read on.
 
 ### Synchronization troubles: Can data ever be lost?
 
 The only way to lose data forever is when Cloudypass can't get involved.
 
-Assume you are offline for some reason, and you edit the Keepass database on your mobile ... and a little later, still offline, on your tablet. When connectivity is restored, one of these devices will sync its database to the cloud first, followed by the other one. It is at that moment that you will see a message about a sync conflict. If you decide to overwrite the copy in the cloud, the edits you made on the first device will be gone. 
+Assume you are offline for some reason, and you edit the Keepass database on your mobile ... and a little later, still offline, on your tablet. When connectivity is restored, one of these devices will sync its database to the cloud first, followed by the other one. It is at that moment that you will see a message about a sync conflict on the device. If you decide to overwrite the copy in the cloud, the edits you made on the first device will be gone. 
 
 The best way to handle this problem is to avoid the situation altogether: Do not edit the database on multiple mobile devices while you are offline.
 
-(Otherwise, to preserve your edits, you would have to save a renamed copy of the file, rather than overwriting the version in the cloud. That course of action contradicts everything you should normally do – [see above](#sync-conflict-on-mobile). When you are back home at your computer, you would also have to [merge](https://keepass.info/help/v2/sync.html) the renamed database into your local database manually.)
+(Otherwise, to preserve your edits, you would have to save a renamed copy of the file rather than overwrite the version in the cloud. That course of action contradicts everything you should normally do – [see above](#sync-conflict-on-mobile). When you are back home at your computer, you would also have to [merge](https://keepass.info/help/v2/sync.html) the renamed database into your local database manually.)
 
-That may sound complicated, but the good news is that you are unlikely to run into this issue. When you are offline for an extended period of time, there probably won't be a reason for you to change entries in Keepass. However, if a database is shared between several people and everyone edits it on the go, data loss is much more likely. To avoid it, you have to establish a safe workflow among your group, or use a separate database for each member which is read-only for anyone but the owner.
+That may sound complicated, but the good news is that you are unlikely to run into this issue, at least as a single user. When you are offline for an extended period of time, there probably won't be a reason for you to change entries in Keepass.
+
+However, if a database is shared between several people and everyone edits it on the go, data loss is much more likely. Not having a signal is a frequent problem. There is a realistic chance that two people will each be working on an outdated copy at some point, without having access to each others edits. To avoid it, you have to establish a safe workflow among your group, or use a separate database for each member which is read-only for anyone but the owner.
 
 In any event, you can't mitigate the problem with Cloudypass. The issue occurs when you use mobile devices exclusively. Cloudypass does not run on them.
 
 ### File corruption in the cloud
 
-This has happened to me a couple of times. It didn't have anything to do with Cloudypass, but that doesn't make it any less annoying. If the database in the cloud directory is corrupt, you will see an error message telling you about it.
+This has happened to me a couple of times over the years. It didn't have anything to do with Cloudypass, but that doesn't make it any less annoying. If the database in the cloud directory is corrupt, you will see an error message telling you about it.
 
 The solution is simple: Provided that your local copy is intact, just copy it to the cloud directory, overwriting the corrupt database.
 
@@ -160,7 +185,7 @@ You can use the file you find there to restore the local database and the cloud 
 
 ### Something failed without an error message
 
-Unless things have gone wrong on a fairly fundamental level, you will see an error message – either immediately or when you close Keepass. But if that doesn't happen, you can check out the error log. It is located at
+Unless things have gone wrong on a fairly fundamental level, you will see an error message – either immediately or when you close Keepass. But if that doesn't happen, you can check the error log. It is located at
 
     [Local .kdbx database dir]\.admin\Logs\sync.error.log
 
@@ -168,7 +193,7 @@ Unless things have gone wrong on a fairly fundamental level, you will see an err
 
 ##### Which setups has Cloudypass been tested with?
 
-Cloudypass has a pretty generic way of working, so it should work with pretty much every cloud or synchronization service. But that's just theory. 
+Cloudypass works in a generic way, so it should integrate with pretty much every cloud or synchronization service. But that's just theory. 
 
 I have tested Cloudypass with these synchronisation services:
 
@@ -190,7 +215,7 @@ It might seem that using Bash scripts in WSL is a pretty roundabout way of autom
 
 As it turned out, working with WSL [had its own set of challenges](.scripts/dev-support/Notes/Developer%20Notes.md).
 
-Should Keepass ever be ported to macOS, however, the WSL/Bash approach will be an asset. Linux Bash scripts usually don't need much adjustment to run on a Mac.
+If Keepass should ever be ported to macOS or its feature set is implemented in another program for the Mac, then the WSL/Bash approach will be an asset. Linux Bash scripts usually don't need much adjustment to run on a Mac.
 
 ##### Finally, I would like to thank ...
 
@@ -201,6 +226,8 @@ Should Keepass ever be ported to macOS, however, the WSL/Bash approach will be a
 
 ### v.1.1.1
 
+You need to [reinstall the Keepass triggers](#how-to-update) when updating to this version.
+
 - Added support for WSL distro Ubuntu 22.04 LTS
 - Improved check for new errors
 - Fixed optional opening of config files
@@ -208,6 +235,8 @@ Should Keepass ever be ported to macOS, however, the WSL/Bash approach will be a
 - Improved documentation
 
 ### v.1.1.0
+
+You need to [reinstall the Keepass triggers](#how-to-update) when updating to this version.
 
 - Adjusted trigger naming conventions
 - Added trigger verifying that WSL is available
