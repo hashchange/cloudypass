@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 # Top-level wrapper script for lib/is-included-db.
+#
+# For exit codes, see there.
 
 set -eu
 

@@ -35,18 +35,19 @@ fatal_error() { echo -e "$PROGNAME: $1" >&2; exit 1; }
 pwd_filename="$1"
 
 # Verify local database path
-local_master_file="$(get-keepass-db-dir)/$pwd_filename"
+local_master_file="$(get-keepass-db-dir)/$pwd_filename" || fatal_error "Failed to retrieve the path to the Keepass database directory."
 [ ! -f "$local_master_file" ] && fatal_error "Cannot find the local KDBX database provided by the filename argument.\n    Filename argument: $pwd_filename\n    Expected location: $local_master_file\n    (in Windows notation: $(wsl-windows-path -e "$local_master_file"))"
 
-# Check if the local KDBX file is excluded from cloud sync. Exit quietly if excluded.
-is-included-db "$pwd_filename" || exit 0
+# Check if the local KDBX file is excluded from cloud sync. Exit quietly if excluded, or log an
+# error if one occurred (exit code of is-included-db > 1).
+is-included-db "$pwd_filename" || { (($?==1)) && exit 0 || fatal_error "Failed to establish if the database is excluded from synchronization."; }
 
 # Create backup of local database, in the last-known-good directory
-last_known_good="$(get-support-dir last-known-good)/$pwd_filename"
+last_known_good="$(get-support-dir last-known-good)/$pwd_filename" || fatal_error "Failed to retrieve the path to the 'last-known-good' directory."
 safe-filecopy "$local_master_file" "$last_known_good" || fatal_error "Failed to copy the local KDBX database to a short-term backup location (\"last known good\").\n    Copy source: $(wsl-windows-path -e "$local_master_file")\n    Copy target: $(wsl-windows-path -e "$last_known_good")"
 
 # Verify cloud database path. Create a copy of the local file there if it doesn't exist yet.
-cloud_sync_file_win="$(get-cloud-sync-dir)\\$pwd_filename" || fatal_error "Can't find the path to the password file in the cloud sync directory."
+cloud_sync_file_win="$(get-cloud-sync-dir)\\$pwd_filename" || fatal_error "Can't establish the path to the password file in the cloud sync directory."
 if ! safe-file-exists "$cloud_sync_file_win"; then
     safe-filecopy "$local_master_file" "$cloud_sync_file_win" || fatal_error "Failed to copy the local KDBX database to the cloud sync directory.\n    NB The local database, '$pwd_filename', has not yet been present in the cloud sync directory.\n    Copy source: $(wsl-windows-path -e "$local_master_file")\n    Copy target: ${cloud_sync_file_win//\\/\\\\}"
 fi

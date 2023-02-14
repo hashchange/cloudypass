@@ -29,14 +29,15 @@ fatal_error() { echo -e "$PROGNAME: $1" >&2; exit 1; }
 (( $# == 0 )) && fatal_error "Missing argument. KDBX database filename not provided."
 pwd_filename="$1"
 
-# Check if the local KDBX file is excluded from cloud sync. Exit quietly if excluded.
-is-included-db "$pwd_filename" || exit 0
+# Check if the local KDBX file is excluded from cloud sync. Exit quietly if excluded, or log an
+# error if one occurred (exit code of is-included-db > 1).
+is-included-db "$pwd_filename" || { (($?==1)) && exit 0 || fatal_error "Failed to establish if the database is excluded from synchronization."; }
 
 # File paths
-temp_import_dir="$(get-support-dir temp-import)"
+temp_import_dir="$(get-support-dir temp-import)" || fatal_error "Failed to retrieve the path to the 'temp-import' directory."
 temp_import_file="$temp_import_dir/$pwd_filename"
 temp_last_synced_file="$temp_import_dir/$pwd_filename--in-progress"
-last_synced_file="$(get-support-dir last-synced)/$pwd_filename"
+last_synced_file="$(get-support-dir last-synced)/$pwd_filename" || fatal_error "Failed to retrieve the path to the 'last-synced' directory."
 
 # Move the last-synced file to its final destination (and rename it).
 # NB mv is safe to use. It preserves the timestamp even on mounted Windows drives.

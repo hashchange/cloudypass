@@ -17,7 +17,10 @@
 # - the cloud file has stayed the same and does not contain external changes
 # - the file is excluded from cloud sync (listed in then EXCLUDE_FROM_SYNC config setting)
 # - the cloud file does not exist
-# - an error has occurred (exit code may be 1 or higher).
+#
+# Sets exit code 2 (also falsy = skip import) if
+#
+# - an error has occurred.
 #   This behaviour prevents an import from going ahead in the presence of errors, ie in a situation
 #   of uncertainty.
 #
@@ -39,22 +42,24 @@ export PATH="$progdir/lib:$PATH"
 exec 2> >(log-errors)
 
 # Functions
-fatal_error() { echo -e "$PROGNAME: $1" >&2; exit 1; }
+fatal_error() { echo -e "$PROGNAME: $1" >&2; exit 2; }    # Exit status 2!
 
 # Argument
 (($# == 0)) && fatal_error "Missing argument. KDBX database filename not provided."
 pwd_filename="$1"
 
-# Check if the local KDBX file is excluded from cloud sync. Exit quietly if excluded.
-is-included-db "$pwd_filename" || exit 1
+# Check if the local KDBX file is excluded from cloud sync. Exit quietly if excluded (but preserve
+# the exit status, passing on an error exit code > 1).
+is-included-db "$pwd_filename" || exit $?
 
-# Verify cloud database path. Exit quietly if the cloud database doesn't exist.
-cloud_sync_file_win="$(get-cloud-sync-dir)\\$pwd_filename" || fatal_error "Can't find the path to the password file in the cloud sync directory."
-safe-file-exists "$cloud_sync_file_win" || exit 1;
+# Verify cloud database path. Exit quietly if the cloud database doesn't exist (but preserve the
+# exit status, passing on an error exit code > 1).
+cloud_sync_file_win="$(get-cloud-sync-dir)\\$pwd_filename" || fatal_error "Can't establish the path to the password file in the cloud sync directory."
+safe-file-exists "$cloud_sync_file_win" || exit $?
 
 # Verify last-synced database path. Exit quietly, with truthy exit status, if the file doesn't exist.
-last_synced_file="$(get-support-dir last-synced)/$pwd_filename"
-[ -f "$last_synced_file" ] || exit 0;
+last_synced_file="$(get-support-dir last-synced)/$pwd_filename" || fatal_error "Failed to retrieve the path to the 'last-synced' directory."
+[ -f "$last_synced_file" ] || exit 0
 
 # Compare the current cloud database file to the "last-synced" reference file
 safe-is-binary-same "$cloud_sync_file_win" "$last_synced_file" && exit 1 || { (($?==1)) && exit 0 || fatal_error "Failed to compare the cloud-synced file to the reference file (the \"last-synced\" file).\n    Cloud-synced file: ${cloud_sync_file_win//\\/\\\\}\n    Reference file:    $(wsl-windows-path -e "$last_synced_file")"; }

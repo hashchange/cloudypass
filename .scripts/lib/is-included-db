@@ -7,7 +7,7 @@
 # create output.
 #
 # Sets exit code 0 (processing okay) only if the check finished without error. In case of any error,
-# exit code 1 or higher (exclude from processing) is returned.
+# exit code 2 (> 0 => exclude from processing) is returned.
 #
 # The list of excluded files is defined in the config files.
 
@@ -22,7 +22,7 @@ progdir="$([[ "$BASH_SOURCE" == /* ]] && dirname "$BASH_SOURCE" || { _dir="$( re
 export PATH="$progdir:$PATH"
 
 # Functions
-fatal_error() { echo -e "$PROGNAME: $1" >&2; exit 1; }
+fatal_error() { echo -e "$PROGNAME: $1" >&2; exit 2; }    # Exit status 2!
 
 # Arguments
 (( $# != 1 )) && fatal_error "Incorrect number of arguments. $PROGNAME expects one argument, but $# were provided."

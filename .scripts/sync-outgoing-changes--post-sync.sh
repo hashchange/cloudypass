@@ -29,13 +29,14 @@ fatal_error() { echo -e "$PROGNAME: $1" >&2; exit 1; }
 (( $# == 0 )) && fatal_error "Missing argument. KDBX database filename not provided."
 pwd_filename="$1"
 
-# Check if the local KDBX file is excluded from cloud sync. Exit quietly if excluded.
-is-included-db "$pwd_filename" || exit 0
+# Check if the local KDBX file is excluded from cloud sync. Exit quietly if excluded, or log an
+# error if one occurred (exit code of is-included-db > 1).
+is-included-db "$pwd_filename" || { (($?==1)) && exit 0 || fatal_error "Failed to establish if the database is excluded from synchronization."; }
 
 # Verify cloud database path
-cloud_sync_file_win="$(get-cloud-sync-dir)\\$pwd_filename" || fatal_error "Can't find the path to the password file in the cloud sync directory."
+cloud_sync_file_win="$(get-cloud-sync-dir)\\$pwd_filename" || fatal_error "Can't establish the path to the password file in the cloud sync directory."
 safe-file-exists "$cloud_sync_file_win" || fatal_error "The cloud-synced copy is missing or can't be accessed.\n    Path: ${cloud_sync_file_win//\\/\\\\}"
 
 # Create local duplicate of cloud database, in the last-synced directory
-last_synced_file="$(get-support-dir last-synced)/$pwd_filename"
+last_synced_file="$(get-support-dir last-synced)/$pwd_filename" || fatal_error "Failed to retrieve the path to the 'last-synced' directory."
 safe-filecopy "$cloud_sync_file_win" "$last_synced_file" || fatal_error "Failed to copy the cloud-synced file to a reference location (\"last synced\").\n    Copy source: ${cloud_sync_file_win//\\/\\\\}\n    Copy target: $(wsl-windows-path -e "$last_synced_file")"
