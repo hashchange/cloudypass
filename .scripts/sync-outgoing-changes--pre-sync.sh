@@ -25,10 +25,12 @@ progdir=$([[ $0 == /* ]] && dirname "$0" || { _dir="$( realpath -e "$0")"; [[ "$
 export PATH="$progdir/lib:$PATH"
 
 # Set up error reporting
-exec 2> >(log-errors)
+close_log() { exec 2>&-; wait $log_process_id; }
+end_script_with_status() { close_log; exit "${1:-0}"; }
+fatal_error() { echo -e "$PROGNAME: $1" >&2; end_script_with_status 1; }
 
-# Functions
-fatal_error() { echo -e "$PROGNAME: $1" >&2; exit 1; }
+exec 2> >(log-errors)
+log_process_id=$!
 
 # Argument
 (( $# == 0 )) && fatal_error "Missing argument. KDBX database filename not provided. Script aborted."
@@ -40,7 +42,7 @@ local_master_file="$(get-keepass-db-dir)/$pwd_filename" || fatal_error "Failed t
 
 # Check if the local KDBX file is excluded from cloud sync. Exit quietly if excluded, or log an
 # error if one occurred (exit code of is-included-db > 1).
-is-included-db "$pwd_filename" || { (($?==1)) && exit 0 || fatal_error "Failed to establish if the database is excluded from synchronization."; }
+is-included-db "$pwd_filename" || { (($?==1)) && end_script_with_status 0 || fatal_error "Failed to establish if the database is excluded from synchronization."; }
 
 # Create backup of local database, in the last-known-good directory
 last_known_good="$(get-support-dir last-known-good)/$pwd_filename" || fatal_error "Failed to retrieve the path to the 'last-known-good' directory."
@@ -51,3 +53,5 @@ cloud_sync_file_win="$(get-cloud-sync-dir)\\$pwd_filename" || fatal_error "Can't
 if ! safe-file-exists "$cloud_sync_file_win"; then
     safe-filecopy "$local_master_file" "$cloud_sync_file_win" || fatal_error "Failed to copy the local KDBX database to the cloud sync directory.\n    NB The local database, '$pwd_filename', has not yet been present in the cloud sync directory.\n    Copy source: $(wsl-windows-path -e "$local_master_file")\n    Copy target: ${cloud_sync_file_win//\\/\\\\}"
 fi
+
+end_script_with_status 0

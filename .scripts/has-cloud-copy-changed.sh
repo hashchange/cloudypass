@@ -39,10 +39,12 @@ progdir=$([[ $0 == /* ]] && dirname "$0" || { _dir="$( realpath -e "$0")"; [[ "$
 export PATH="$progdir/lib:$PATH"
 
 # Set up error reporting
-exec 2> >(log-errors)
+close_log() { exec 2>&-; wait $log_process_id; }
+end_script_with_status() { close_log; exit "${1:-0}"; }
+fatal_error() { echo -e "$PROGNAME: $1" >&2; end_script_with_status 2; }    # Exit status 2!
 
-# Functions
-fatal_error() { echo -e "$PROGNAME: $1" >&2; exit 2; }    # Exit status 2!
+exec 2> >(log-errors)
+log_process_id=$!
 
 # Argument
 (($# == 0)) && fatal_error "Missing argument. KDBX database filename not provided."
@@ -50,16 +52,16 @@ pwd_filename="$1"
 
 # Check if the local KDBX file is excluded from cloud sync. Exit quietly if excluded (but preserve
 # the exit status, passing on an error exit code > 1).
-is-included-db "$pwd_filename" || exit $?
+is-included-db "$pwd_filename" || end_script_with_status $?
 
 # Verify cloud database path. Exit quietly if the cloud database doesn't exist (but preserve the
 # exit status, passing on an error exit code > 1).
 cloud_sync_file_win="$(get-cloud-sync-dir)\\$pwd_filename" || fatal_error "Can't establish the path to the password file in the cloud sync directory."
-safe-file-exists "$cloud_sync_file_win" || exit $?
+safe-file-exists "$cloud_sync_file_win" || end_script_with_status $?
 
 # Verify last-synced database path. Exit quietly, with truthy exit status, if the file doesn't exist.
 last_synced_file="$(get-support-dir last-synced)/$pwd_filename" || fatal_error "Failed to retrieve the path to the 'last-synced' directory."
-[ -f "$last_synced_file" ] || exit 0
+[ -f "$last_synced_file" ] || end_script_with_status 0
 
 # Compare the current cloud database file to the "last-synced" reference file
-safe-is-binary-same "$cloud_sync_file_win" "$last_synced_file" && exit 1 || { (($?==1)) && exit 0 || fatal_error "Failed to compare the cloud-synced file to the reference file (the \"last-synced\" file).\n    Cloud-synced file: ${cloud_sync_file_win//\\/\\\\}\n    Reference file:    $(wsl-windows-path -e "$last_synced_file")"; }
+safe-is-binary-same "$cloud_sync_file_win" "$last_synced_file" && end_script_with_status 1 || { (($?==1)) && end_script_with_status 0 || fatal_error "Failed to compare the cloud-synced file to the reference file (the \"last-synced\" file).\n    Cloud-synced file: ${cloud_sync_file_win//\\/\\\\}\n    Reference file:    $(wsl-windows-path -e "$last_synced_file")"; }

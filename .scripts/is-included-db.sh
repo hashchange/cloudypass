@@ -12,6 +12,13 @@ progdir="$([[ "$BASH_SOURCE" == /* ]] && dirname "$BASH_SOURCE" || { _dir="$( re
 export PATH="$progdir/lib:$PATH"
 
 # Set up error reporting
-exec 2> >(log-errors)
+close_log() { exec 2>&-; wait $log_process_id; }
+end_script_with_status() { close_log; exit "${1:-0}"; }
 
+exec 2> >(log-errors)
+log_process_id=$!
+
+# Task
 is-included-db "$@"
+
+end_script_with_status $?

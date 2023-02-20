@@ -20,10 +20,12 @@ progdir=$([[ $0 == /* ]] && dirname "$0" || { _dir="$( realpath -e "$0")"; [[ "$
 export PATH="$progdir/lib:$PATH"
 
 # Set up error reporting
-exec 2> >(log-errors)
+close_log() { exec 2>&-; wait $log_process_id; }
+end_script_with_status() { close_log; exit "${1:-0}"; }
+fatal_error() { echo -e "$PROGNAME: $1" >&2; end_script_with_status 1; }
 
-# Functions
-fatal_error() { echo -e "$PROGNAME: $1" >&2; exit 1; }
+exec 2> >(log-errors)
+log_process_id=$!
 
 # Argument
 (( $# == 0 )) && fatal_error "Missing argument. KDBX database filename not provided."
@@ -31,7 +33,7 @@ pwd_filename="$1"
 
 # Check if the local KDBX file is excluded from cloud sync. Exit quietly if excluded, or log an
 # error if one occurred (exit code of is-included-db > 1).
-is-included-db "$pwd_filename" || { (($?==1)) && exit 0 || fatal_error "Failed to establish if the database is excluded from synchronization."; }
+is-included-db "$pwd_filename" || { (($?==1)) && end_script_with_status 0 || fatal_error "Failed to establish if the database is excluded from synchronization."; }
 
 # File paths
 temp_import_dir="$(get-support-dir temp-import)" || fatal_error "Failed to retrieve the path to the 'temp-import' directory."
@@ -46,3 +48,5 @@ mv -f "$temp_last_synced_file" "$last_synced_file" || fatal_error "Failed to mov
 
 # Delete the temporary import file.
 rm "$temp_import_file"
+
+end_script_with_status $?

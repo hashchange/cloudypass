@@ -14,9 +14,14 @@ progdir="$([[ "$BASH_SOURCE" == /* ]] && dirname "$BASH_SOURCE" || { _dir="$( re
 export PATH="$progdir/lib:$PATH"
 
 # Set up error reporting
+close_log() { exec 2>&-; wait $log_process_id; }
+end_script_with_status() { close_log; exit "${1:-0}"; }
+fatal_error() { echo -e "$PROGNAME: $1" >&2; end_script_with_status 1; }
+
 exec 2> >(log-errors)
+log_process_id=$!
 
-# Functions
-fatal_error() { echo -e "$PROGNAME: $1" >&2; exit 1; }
-
+# Task
 get-support-dir --windows-format temp-import || fatal_error "Failed to determine the path to the import directory."
+
+end_script_with_status 0
