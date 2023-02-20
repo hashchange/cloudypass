@@ -30,7 +30,8 @@
 # ERROR_LOG is the permanent error log. NEW_ERRORS_LOG is a log for new errors.
 #
 # If the log for new errors is not empty, it indicates that new, unprocessed errors have occurred.
-# The NEW_ERRORS_LOG contains a duplicate of the log records in ERROR_LOG for these new errors. The
+# The NEW_ERRORS_LOG contains a duplicate of the log records in ERROR_LOG for these new errors. For
+# better readability in the Keepass message box, timestamps are omitted in NEW_ERRORS_LOG. The
 # NEW_ERRORS_LOG file must be emptied or deleted once the errors have been displayed to the user or
 # processed in another way. By contrast, the ERROR_LOG stays around as a permanent record.
 
@@ -46,4 +47,4 @@ NEW_ERRORS_LOG="$(get-error-log --new-errors)" || exit $?
 
 # Processing stdin
 timestamp="$(date +"%F %T.%2N")"
-sed "s/^/$timestamp: /" | tee -a "$ERROR_LOG" "$NEW_ERRORS_LOG" | sed "s/^$timestamp: //" >&2
+sed "s/^/$timestamp: /" | tee -a "$ERROR_LOG" | sed "s/^$timestamp: //" | tee -a "$NEW_ERRORS_LOG" >&2
