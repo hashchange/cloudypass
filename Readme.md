@@ -157,7 +157,7 @@ Assume you are offline for some reason, and you edit the Keepass database on you
 
 The best way to handle this problem is to avoid the situation altogether: Do not edit the database on multiple mobile devices while you are offline.
 
-(Otherwise, to preserve your edits, you would have to save a renamed copy of the file rather than overwrite the version in the cloud. That course of action contradicts everything you should normally do – [see above](#sync-conflict-on-mobile). When you are back home at your computer, you would also have to [merge](https://keepass.info/help/v2/sync.html) the renamed database into your local database manually.)
+(Otherwise, to preserve your edits, you would have to save a renamed copy of the file rather than overwrite the version in the cloud. That course of action contradicts what you should normally do – [see above](#sync-conflict-on-mobile). When you are back home at your computer, you would also have to [merge](https://keepass.info/help/v2/sync.html) the renamed database into your local database manually.)
 
 That may sound complicated, but the good news is that you are unlikely to run into this issue, at least as a single user. When you are offline for an extended period of time, there probably won't be a reason for you to change entries in Keepass.
 
@@ -188,6 +188,12 @@ You can use the file you find there to restore the local database and the cloud 
 Unless things have gone wrong on a fairly fundamental level, you will see an error message – either immediately or when you close Keepass. But if that doesn't happen, you can check the error log. It is located at
 
     [Local .kdbx database dir]\.admin\Logs\sync.error.log
+
+### Can Keepass databases be kept in other locations?
+
+You can open a database in a location where Cloudypass is not installed and use it normally. There won't be any malfunctions, warnings or error messages. The database just won't be synced.
+
+In theory, you can even set up multiple database folders, each containing a separate Cloudypass installation with its own configuration. E.g., you could use one folder for synchonization with Dropbox and another folder for synchonization with OneDrive. The Keepass triggers work for each of these installs, without duplication or adjustment. Whether anyone actually needs such a setup is debatable, but it would work.
 
 ## Background
 
@@ -223,6 +229,11 @@ If Keepass should ever be ported to macOS or its feature set is implemented in a
 - ... [the developer behind Keepass](https://keepass.info/contact.html) who put all that work into it, consistently over many years. Thank you.
 
 ## Release Notes
+
+### v.1.1.2
+
+- Improved error handling and logging
+- Added update instructions to documentation
 
 ### v.1.1.1
 
