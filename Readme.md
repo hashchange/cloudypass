@@ -240,6 +240,11 @@ If Keepass should ever be ported to macOS or its feature set is implemented in a
 
 ## Release Notes
 
+### v.1.1.3
+
+- Moved logs to Linux filesystem, fixing slow performance
+- Added log viewer utility
+
 ### v.1.1.2
 
 - Improved error handling and logging
