@@ -20,6 +20,22 @@
 # occurred. After they have been processed, the log can either be emptied or the file can be
 # deleted. It will be recreated the next time this command is called.
 #
+# Location in the Linux filesystem
+# --------------------------------
+#
+# Earlier versions of the script had placed the logs into the .admin\Logs directory in the Windows
+# filesystem. But access was too slow. Even without writing to the logs, closing the output stream
+# at the end of every Cloudypass call took so long that it introduced intolerable delays. Moving the
+# logs to the Linux filesystem solved the problem.
+#
+# Location ID
+# -----------
+#
+# In theory, multiple Cloudypass setups can coexist, even though that is unlikely in practice. Logs
+# should be location-specific and keep multiple installations apart. The path to the .admin
+# directory of a particular Cloudypass setup is hashed and becomes the unique identifier for that
+# setup. The corresponding logs are kept in a directory which is derived from the location ID.
+#
 # Option:
 #
 # -n, --new-errors:  returns the path to the log for new errors
@@ -34,23 +50,30 @@ progdir="$([[ "$BASH_SOURCE" == /* ]] && dirname "$BASH_SOURCE" || { _dir="$( re
 
 export PATH="$progdir:$PATH"
 
-# Preconfigured paths
-admin_dir="$(realpath $progdir/../..)"
-
-LOG_DIR="$admin_dir/Logs"
-ERROR_LOG="$LOG_DIR/sync.error.log"
-NEW_ERRORS_LOG="$LOG_DIR/new.sync.errors.log"
-
 # Functions
 fatal_error() { echo -e "$PROGNAME: $1" >&2; exit 1; }
 
-# Set up error reporting
+# Preconfigured paths and location ID
+admin_dir="$(realpath "$progdir/../..")"
+location_id="$(
+    set -o pipefail    # See https://stackoverflow.com/a/19804002/508355
+
+    echo -n "$admin_dir" | md5sum | cut -d ' ' -f 1    # See https://askubuntu.com/q/53846/1027405
+
+    [ $? -ne 0 ] && exit 1; set +o pipefail
+)" || fatal_error "Error while determining the MD5 checksum of the path \"$admin_dir\". The location ID cannot be created."
+
+LOG_DIR="$HOME/.local/state/cloudypass/logs/location-id-$location_id"
+ERROR_LOG="$LOG_DIR/sync.error.log"
+NEW_ERRORS_LOG="$LOG_DIR/new.sync.errors.log"
+
+# Set up the error logs
 if [ ! -d "$LOG_DIR" ]; then
-    mkdir -p "$LOG_DIR" || fatal_error "Failed to create the log directory at: $(wsl-windows-path -e "$LOG_DIR")"
+    mkdir -p "$LOG_DIR" || fatal_error "Failed to create the log directory at: $(wsl-windows-path -ef "$LOG_DIR")"
 fi
 
-touch "$ERROR_LOG" || fatal_error "Failed to create or access the error log file at: $(wsl-windows-path -e "$ERROR_LOG")"
-touch "$NEW_ERRORS_LOG" || fatal_error "Failed to create or access the log file for new errors at: $(wsl-windows-path -e "$NEW_ERRORS_LOG")"
+touch "$ERROR_LOG" || fatal_error "Failed to create or access the error log file at: $(wsl-windows-path -ef "$ERROR_LOG")"
+touch "$NEW_ERRORS_LOG" || fatal_error "Failed to create or access the log file for new errors at: $(wsl-windows-path -ef "$NEW_ERRORS_LOG")"
 
 # Arguments
 (( $# > 1 )) && fatal_error "Incorrect number of arguments. $PROGNAME expects one argument at most, but $# were provided."

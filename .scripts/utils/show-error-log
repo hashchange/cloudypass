@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# Returns the content of the error log.
+#
+# If the error log does not exist or is empty, nothing is returned.
+
+set -eu
+
+# Absolute paths to the script and the library directory.
+progdir="$([[ "$BASH_SOURCE" == /* ]] && dirname "$BASH_SOURCE" || { _dir="$( realpath -e "$BASH_SOURCE")"; [[ "$_dir" == /* ]] && dirname "$_dir" || pwd; })"
+libdir="$(realpath "$progdir/../lib")"
+
+export PATH="$progdir:$libdir:$PATH"
+
+ERROR_LOG="$(get-error-log)" || exit $?
+cat "$ERROR_LOG"

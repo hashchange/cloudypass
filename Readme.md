@@ -185,9 +185,19 @@ You can use the file you find there to restore the local database and the cloud 
 
 ### Something failed without an error message
 
-Unless things have gone wrong on a fairly fundamental level, you will see an error message – either immediately or when you close Keepass. But if that doesn't happen, you can check the error log. It is located at
+Unless things have gone wrong on a fairly fundamental level, you will see an error message – either immediately or when you close Keepass. But if that doesn't happen, you can check the error log. To display its contents, open Powershell or a Windows command prompt in the directory
 
-    [Local .kdbx database dir]\.admin\Logs\sync.error.log
+    [Local .kdbx database dir]\.admin\.scripts\utils
+
+and run the command
+
+```bat
+wsl ./show-error-log
+```
+
+It is unlikely you will ever have to access the log directly. It is located in the Linux filesystem of WSL. You can find the log file `sync.error.log` in a subdirectory of 
+
+    ~/.local/state/cloudypass/logs
 
 ### Can Keepass databases be kept in other locations?
 
