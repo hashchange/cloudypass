@@ -275,6 +275,6 @@ You need to [reinstall the Keepass triggers](#how-to-update) when updating to th
 
 MIT.
 
-Copyright (c) 2021-2023 Michael Heim.
+Copyright (c) 2021-2024 Michael Heim.
 
 
